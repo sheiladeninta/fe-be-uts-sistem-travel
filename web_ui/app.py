@@ -102,8 +102,12 @@ def register():
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
-    flash('You have been logged out', 'success')
+    if 'user' in session:
+        session.pop('user', None)
+        flash('You have been logged out', 'success')
+    elif 'admin' in session:
+        session.pop('admin', None)
+        flash('Admin logged out successfully', 'success')
     return redirect(url_for('index'))
 
 @app.route('/book/<int:destination_id>', methods=['GET', 'POST'])
@@ -216,6 +220,50 @@ def booking_detail(booking_id):
         return redirect(url_for('user_bookings'))
     
     return render_template('booking_detail.html', booking=booking)
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    try:
+        # Ambil data dari berbagai service
+        users = requests.get(f"{USER_SERVICE_URL}/users").json().get('users', [])
+        bookings = requests.get(f"{BOOKING_SERVICE_URL}/bookings?limit=5").json().get('bookings', [])
+        destinations = requests.get(f"{DESTINATION_SERVICE_URL}/destinations").json().get('destinations', [])
+        
+        stats = {
+            'users_count': len(users),
+            'bookings_count': len(bookings),
+            'destinations_count': len(destinations),
+            'recent_bookings': bookings 
+        }
+    except requests.RequestException as e:
+        # Error handling
+        stats = {'users_count': 0, 'bookings_count': 0, 'destinations_count': 0, 'recent_bookings': []}
+        flash('Failed to load data from services', 'danger')
+    
+    return render_template('admin_dashboard.html', stats=stats)
+
+@app.route('/admin_login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        try:
+            response = requests.post(
+                f"{USER_SERVICE_URL}/admins/auth", 
+                json={"username": username, "password": password}
+            )
+
+            if response.status_code == 200 and response.json().get('success'):
+                session['admin'] = response.json()['admin']
+                flash('Admin login successful', 'success')
+                return redirect(url_for('admin_dashboard'))
+            else:
+                flash('Invalid username or password', 'danger')
+        except requests.RequestException:
+            flash('Unable to connect to user service', 'danger')
+    
+    return render_template('admin_login.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Admin Dashboard</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Users</h5>
+                    <h2>{{ stats.users_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Bookings</h5>
+                    <h2>{{ stats.bookings_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Destinations</h5>
+                    <h2>{{ stats.destinations_count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Recent Bookings</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Destination</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th> <!-- Tambahkan kolom Action -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in stats.recent_bookings %}
+                    <tr>
+                        <td>{{ booking.id }}</td>
+                        <td>
+                            {% if booking.user %}
+                                {{ booking.user.name }}
+                            {% else %}
+                                Unknown User
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if booking.destination %}
+                                {{ booking.destination.name }}
+                            {% else %}
+                                Unknown Destination
+                            {% endif %}
+                        </td>
+                        <td>{{ booking.travel_date }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if booking.status == 'Confirmed' else 'warning' if booking.status == 'Pending' else 'danger' }}">
+                                {{ booking.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if booking.status == 'Pending' %}
+                                <button class="btn btn-success btn-sm" onclick="updateStatus({{ booking.id }}, 'Confirmed')">Confirm</button>
+                                <button class="btn btn-danger btn-sm" onclick="updateStatus({{ booking.id }}, 'Rejected')">Reject</button>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% raw %}
+<script>
+function updateStatus(bookingId, newStatus) {
+    if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this booking?`)) {
+        fetch(`http://localhost:5003/api/bookings/${bookingId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message || "Status updated");
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Failed to update status.");
+        });
+    }
+}
+</script>
+{% endraw %}
+
+{% endblock %}

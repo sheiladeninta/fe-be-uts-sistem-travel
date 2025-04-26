@@ -72,3 +72,72 @@ class User:
         )
         user = cursor.fetchone()
         return dict(user) if user else None
+    
+class Admin:
+    @staticmethod
+    def create_table():
+        db = sqlite3.connect(DATABASE)
+        cursor = db.cursor()
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+        ''')
+        db.commit()
+        db.close()
+    
+    @staticmethod
+    def get_all():
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT id, username FROM admins")
+            admins = [dict(row) for row in cursor.fetchall()]
+            return admins
+        finally:
+            cursor.close()
+    
+    @staticmethod
+    def get_by_id(admin_id):
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT id, username FROM admins WHERE id=?", (admin_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def authenticate(username, password):
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT id, username FROM admins WHERE username=? AND password=?",
+                (username, password)
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def create(username, password):
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO admins (username, password) VALUES (?, ?)",
+                (username, password)
+            )
+            db.commit()
+            return cursor.lastrowid
+        except sqlite3.IntegrityError as e:
+            db.rollback()
+            print(f"Error creating admin: {e}")
+            return None
+        finally:
+            cursor.close()
