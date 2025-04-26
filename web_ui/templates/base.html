@@ -76,31 +76,16 @@
                 <p>Your trusted travel companion for exploring Indonesia's beautiful destinations.</p>
             </div>
             <div class="col-md-4">
-                <h5>Quick Links</h5>
-                <ul class="list-unstyled">
-                    <li><a href="{{ url_for('index') }}">Home</a></li>
-                    <li><a href="{{ url_for('destinations') }}">Destinations</a></li>
-                    {% if session.get('user') %}
-                        <li><a href="{{ url_for('user_bookings') }}">My Bookings</a></li>
-                        <li><a href="{{ url_for('user_profile') }}">Profile</a></li>
-                    {% else %}
-                        <li><a href="{{ url_for('login') }}">Login</a></li>
-                        <li><a href="{{ url_for('register') }}">Register</a></li>
-                    {% endif %}
-                </ul>
-            </div>
-            <div class="col-md-4">
                 <h5>Contact Us</h5>
                 <address>
-                    <i class="fas fa-map-marker-alt"></i> 123 Travel Street, Jakarta<br>
-                    <i class="fas fa-phone"></i> +62 123 456 7890<br>
+                    <i class="fas fa-map-marker-alt"></i> Jl. Telekomunikasi No. 1, Bandung Terusan Buahbatu<br>
+                    <i class="fas fa-phone"></i> +6287831327093<br>
                     <i class="fas fa-envelope"></i> info@travely.com
                 </address>
                 <div class="social-icons">
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                </div>
+                    <a href="https://wa.me/6287831327093"><i class="fab fa-whatsapp" style="font-size: 30px;"></i></a>
+                    <a href="https://www.instagram.com/sheiladnnt/"><i class="fab fa-instagram" style="font-size: 30px;"></i></a>
+                </div>                
             </div>
         </div>
         <hr>

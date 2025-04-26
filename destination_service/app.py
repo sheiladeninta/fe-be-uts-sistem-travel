@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flasgger import Swagger
 import sqlite3
 import json
 import os
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+swagger = Swagger(app)
 
 # Initialize database
 def init_db():
@@ -34,15 +36,15 @@ def create_sample_destinations():
     if count == 0:
         sample_destinations = [
             ('Bali Paradise Tour', 'Enjoy the beautiful beaches and cultural experiences in Bali.', 
-             2500000, '3 days 2 nights', 'https://via.placeholder.com/300x200?text=Bali'),
+             2500000, '3 days 2 nights', 'https://static.vecteezy.com/system/resources/thumbnails/006/933/128/small/beautiful-tropical-island-scenery-two-sun-beds-loungers-umbrella-under-palm-tree-white-sand-sea-view-with-horizon-idyllic-blue-sky-calmness-and-relaxation-inspirational-beach-resort-hotel-photo.jpg'),
             ('Yogyakarta Heritage Tour', 'Explore ancient temples and traditional arts in Yogyakarta.', 
-             1800000, '2 days 1 night', 'https://via.placeholder.com/300x200?text=Yogyakarta'),
+             1800000, '2 days 1 night', 'https://raminten.com/wp-content/uploads/2024/07/tugu-jogja-300x200.jpg'),
             ('Bandung Highland Tour', 'Experience cool weather and tea plantations in Bandung.', 
-             1500000, '2 days 1 night', 'https://via.placeholder.com/300x200?text=Bandung'),
+             1500000, '2 days 1 night', 'https://static.vecteezy.com/system/resources/thumbnails/009/169/931/small/bandung-indonesia-may-23-2022-group-of-tourist-at-sky-bridge-of-nimo-highland-pangalengan-bandung-west-java-indonesia-view-of-tea-plantation-mountain-and-lake-free-photo.jpg'),
             ('Raja Ampat Diving Tour', 'Discover the underwater paradise of Raja Ampat.', 
-             5000000, '4 days 3 nights', 'https://via.placeholder.com/300x200?text=Raja+Ampat'),
+             5000000, '4 days 3 nights', 'https://www.papuaexplorers.com/wp-content/uploads/cache/2017/03/coral-underneath-yenbuba-jetty-raja-ampat/740619268.jpg'),
             ('Lombok Island Tour', 'Visit beautiful beaches and explore local culture in Lombok.', 
-             2200000, '3 days 2 nights', 'https://via.placeholder.com/300x200?text=Lombok')
+             2200000, '3 days 2 nights', 'https://static.vecteezy.com/system/resources/thumbnails/006/821/449/small/view-of-the-hills-and-coast-and-several-sailing-boats-on-padar-island-free-photo.jpg')
         ]
         cursor.executemany(
             "INSERT INTO destinations (name, description, price, duration, image_url) VALUES (?, ?, ?, ?, ?)",
@@ -54,6 +56,13 @@ def create_sample_destinations():
 
 @app.route('/api/destinations', methods=['GET'])
 def get_destinations():
+    """
+    Get all destinations
+    ---
+    responses:
+      200:
+        description: A list of all destinations
+    """
     conn = sqlite3.connect('destinations.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -64,6 +73,21 @@ def get_destinations():
 
 @app.route('/api/destinations/<int:destination_id>', methods=['GET'])
 def get_destination(destination_id):
+    """
+    Get a specific destination by ID
+    ---
+    parameters:
+      - name: destination_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the destination
+    responses:
+      200:
+        description: Destination details
+      404:
+        description: Destination not found
+    """
     conn = sqlite3.connect('destinations.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -77,6 +101,38 @@ def get_destination(destination_id):
 
 @app.route('/api/destinations', methods=['POST'])
 def add_destination():
+    """
+    Add a new destination
+    ---
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - name
+            - description
+            - price
+            - duration
+            - image_url
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            price:
+              type: number
+            duration:
+              type: string
+            image_url:
+              type: string
+    responses:
+      201:
+        description: Destination added successfully
+      400:
+        description: Missing required fields
+    """
     data = request.json
     
     if not all(key in data for key in ['name', 'description', 'price', 'duration', 'image_url']):

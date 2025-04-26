@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flasgger import Swagger
 import sqlite3
 import json
 import os
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+swagger = Swagger(app)
 
 # Initialize database
 def init_db():
@@ -46,6 +48,13 @@ def create_sample_users():
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
+    """
+    Get all users (excluding passwords)
+    ---
+    responses:
+      200:
+        description: List of users
+    """
     conn = sqlite3.connect('users.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -56,6 +65,21 @@ def get_users():
 
 @app.route('/api/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
+    """
+    Get a specific user by ID
+    ---
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the user
+    responses:
+      200:
+        description: User details
+      404:
+        description: User not found
+    """
     conn = sqlite3.connect('users.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -69,6 +93,39 @@ def get_user(user_id):
 
 @app.route('/api/users', methods=['POST'])
 def create_user():
+    """
+    Create a new user
+    ---
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - name
+            - email
+            - phone
+            - password
+          properties:
+            name:
+              type: string
+              example: Alice
+            email:
+              type: string
+              example: alice@example.com
+            phone:
+              type: string
+              example: 08111111111
+            password:
+              type: string
+              example: secret123
+    responses:
+      201:
+        description: User created successfully
+      400:
+        description: Missing fields or email already exists
+    """
     data = request.json
     
     if not all(key in data for key in ['name', 'email', 'phone', 'password']):
@@ -93,6 +150,31 @@ def create_user():
 
 @app.route('/api/users/auth', methods=['POST'])
 def authenticate_user():
+    """
+    Authenticate a user
+    ---
+    parameters:
+      - in: body
+        name: credentials
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              example: john@example.com
+            password:
+              type: string
+              example: password123
+    responses:
+      200:
+        description: Authentication successful
+      401:
+        description: Invalid credentials
+    """
     data = request.json
     
     if not all(key in data for key in ['email', 'password']):

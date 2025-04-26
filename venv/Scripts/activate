@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="D:\SHEILAKULIAHTELKOM\KULIAH IAE\uts-sistem-travel\fe_be\venv"
+VIRTUAL_ENV="D:\SHEILAKULIAHTELKOM\KULIAH IAE\uts-sistem-travel\fe-be-uts-sistem-travel\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

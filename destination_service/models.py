@@ -70,15 +70,15 @@ class Destination:
         if count == 0:
             sample_destinations = [
                 ('Bali Paradise Tour', 'Enjoy the beautiful beaches and cultural experiences in Bali.', 
-                 2500000, '3 days 2 nights', 'https://via.placeholder.com/300x200?text=Bali'),
+                 2500000, '3 days 2 nights', 'https://static.vecteezy.com/system/resources/thumbnails/006/933/128/small/beautiful-tropical-island-scenery-two-sun-beds-loungers-umbrella-under-palm-tree-white-sand-sea-view-with-horizon-idyllic-blue-sky-calmness-and-relaxation-inspirational-beach-resort-hotel-photo.jpg'),
                 ('Yogyakarta Heritage Tour', 'Explore ancient temples and traditional arts in Yogyakarta.', 
-                 1800000, '2 days 1 night', 'https://via.placeholder.com/300x200?text=Yogyakarta'),
+                 1800000, '2 days 1 night', 'https://raminten.com/wp-content/uploads/2024/07/tugu-jogja-300x200.jpg'),
                 ('Bandung Highland Tour', 'Experience cool weather and tea plantations in Bandung.', 
-                 1500000, '2 days 1 night', 'https://via.placeholder.com/300x200?text=Bandung'),
+                 1500000, '2 days 1 night', 'https://static.vecteezy.com/system/resources/thumbnails/009/169/931/small/bandung-indonesia-may-23-2022-group-of-tourist-at-sky-bridge-of-nimo-highland-pangalengan-bandung-west-java-indonesia-view-of-tea-plantation-mountain-and-lake-free-photo.jpg'),
                 ('Raja Ampat Diving Tour', 'Discover the underwater paradise of Raja Ampat.', 
-                 5000000, '4 days 3 nights', 'https://via.placeholder.com/300x200?text=Raja+Ampat'),
+                 5000000, '4 days 3 nights', 'https://www.papuaexplorers.com/wp-content/uploads/cache/2017/03/coral-underneath-yenbuba-jetty-raja-ampat/740619268.jpg'),
                 ('Lombok Island Tour', 'Visit beautiful beaches and explore local culture in Lombok.', 
-                 2200000, '3 days 2 nights', 'https://via.placeholder.com/300x200?text=Lombok')
+                 2200000, '3 days 2 nights', 'https://static.vecteezy.com/system/resources/thumbnails/006/821/449/small/view-of-the-hills-and-coast-and-several-sailing-boats-on-padar-island-free-photo.jpg')
             ]
             cursor.executemany(
                 "INSERT INTO destinations (name, description, price, duration, image_url) VALUES (?, ?, ?, ?, ?)",

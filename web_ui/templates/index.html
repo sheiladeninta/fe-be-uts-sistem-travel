@@ -5,6 +5,32 @@
 {% block content %}
 <div class="index-page">
     <!-- Hero Section -->
+    <style>
+        .hero-section {
+            background-image: url('https://images.pexels.com/photos/15879944/pexels-photo-15879944.jpeg?cs=srgb&dl=pexels-javaistan-15879944.jpg&fm=jpg');
+            background-size: cover;
+            background-position: center;
+            min-height: 80vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-content {
+            background-color: #9BCCEC;
+            padding: 2rem;
+            border-radius: 15px;
+            color: white;
+        }
+    </style>
+
+    <style>
+        .duration-badge {
+            background-color: #9BCCEC;
+            color: #000; /* optional: makes text dark */
+        }
+    </style>
+    
     <div class="hero-section">
         <div class="hero-content text-center p-5 rounded">
             <h1 class="display-3 fw-bold">Discover Indonesia's Beauty</h1>
@@ -63,7 +89,7 @@
                                     <h5 class="card-title">{{ destination.name }}</h5>
                                     <p class="card-text">{{ destination.description[:100] }}{% if destination.description|length > 100 %}...{% endif %}</p>
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-info text-dark">{{ destination.duration }}</span>
+                                        <span class="badge duration-badge text-dark">{{ destination.duration }}</span>
                                         <span class="text-primary fw-bold">Rp {{ "{:,}".format(destination.price) }}</span>
                                     </div>
                                 </div>

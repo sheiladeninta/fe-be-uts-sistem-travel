@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flasgger import Swagger 
 import sqlite3
 import requests
 import json
@@ -7,6 +8,7 @@ import datetime
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+swagger = Swagger(app)
 
 # Service URLs
 USER_SERVICE_URL = "http://localhost:5001/api"
@@ -33,6 +35,13 @@ def init_db():
 
 @app.route('/api/bookings', methods=['GET'])
 def get_all_bookings():
+    """
+    Get all bookings with user and destination details
+    ---
+    responses:
+      200:
+        description: A list of all bookings
+    """
     conn = sqlite3.connect('bookings.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -66,6 +75,21 @@ def get_all_bookings():
 
 @app.route('/api/bookings/user/<int:user_id>', methods=['GET'])
 def get_user_bookings(user_id):
+    """
+    Get all bookings for a specific user
+    ---
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the user
+    responses:
+      200:
+        description: A list of bookings for the user
+      404:
+        description: User not found
+    """
     conn = sqlite3.connect('bookings.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -91,6 +115,21 @@ def get_user_bookings(user_id):
 
 @app.route('/api/bookings/<int:booking_id>', methods=['GET'])
 def get_booking(booking_id):
+    """
+    Get a booking by booking ID
+    ---
+    parameters:
+      - name: booking_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the booking
+    responses:
+      200:
+        description: Booking details
+      404:
+        description: Booking not found
+    """
     conn = sqlite3.connect('bookings.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -127,6 +166,40 @@ def get_booking(booking_id):
 
 @app.route('/api/bookings', methods=['POST'])
 def create_booking():
+    """
+    Create a new booking
+    ---
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - user_id
+            - destination_id
+            - travel_date
+            - passengers
+          properties:
+            user_id:
+              type: integer
+            destination_id:
+              type: integer
+            travel_date:
+              type: string
+              format: date
+            passengers:
+              type: integer
+    responses:
+      201:
+        description: Booking created successfully
+      400:
+        description: Missing required fields
+      404:
+        description: User or destination not found
+      503:
+        description: Service unavailable
+    """
     data = request.json
     
     if not all(key in data for key in ['user_id', 'destination_id', 'travel_date', 'passengers']):
@@ -189,6 +262,33 @@ def create_booking():
 
 @app.route('/api/bookings/<int:booking_id>', methods=['PUT'])
 def update_booking_status(booking_id):
+    """
+    Update booking status
+    ---
+    parameters:
+      - name: booking_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the booking
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+    responses:
+      200:
+        description: Booking status updated successfully
+      400:
+        description: Missing status field
+      404:
+        description: Booking not found
+    """
     data = request.json
     
     if 'status' not in data:
