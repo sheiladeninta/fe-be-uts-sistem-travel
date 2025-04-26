@@ -20,6 +20,14 @@ def init_db():
         password TEXT NOT NULL
     )
     ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -112,7 +120,77 @@ def authenticate_user():
         return jsonify({"success": True, "user": dict(user)})
     return jsonify({"success": False, "error": "Invalid credentials"}), 401
 
+# create a sample admin user
+def create_sample_admins():
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
+    # Mengecek apakah sudah ada data admin
+    cursor.execute("SELECT COUNT(*) FROM admins")
+    count = cursor.fetchone()[0]
+    
+    if count == 0:
+        sample_admins = [
+            ('superadmin', 'superpassword'),
+            ('admin1', 'adminpassword1'),
+            ('admin2', 'adminpassword2')
+        ]
+        cursor.executemany(
+            "INSERT INTO admins (username, password) VALUES (?, ?)",
+            sample_admins
+        )
+        conn.commit()
+    
+    conn.close()
+
+@app.route('/api/admins/auth', methods=['POST'])
+def authenticate_admin():
+    data = request.json
+    if not all(key in data for key in ['username', 'password']):
+        return jsonify({"error": "Missing username or password"}), 400
+    
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, username FROM admins WHERE username=? AND password=?",
+        (data['username'], data['password'])
+    )
+    admin = cursor.fetchone()
+    conn.close()
+    
+    if admin:
+        return jsonify({
+            "success": True,
+            "admin": {"id": admin[0], "username": admin[1]}
+        })
+    return jsonify({"success": False, "error": "Invalid credentials"}), 401
+
+@app.route('/api/admins', methods=['GET'])
+def get_admins():
+    conn = sqlite3.connect('users.db')  # Ganti dengan DB_PATH
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, password FROM admins")
+    admins = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify({"admins": admins})
+
+@app.route('/api/admins/<int:admin_id>', methods=['GET'])
+def get_admin(admin_id):
+    conn = sqlite3.connect('users.db')  # Ganti dengan DB_PATH
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, password FROM admins WHERE id=?", (admin_id,))
+    admin = cursor.fetchone()
+    conn.close()
+    
+    if admin:
+        return jsonify(dict(admin))
+    return jsonify({"error": "Admin not found"}), 404
+
+
 if __name__ == '__main__':
     init_db()
     create_sample_users()
+    create_sample_admins()
     app.run(debug=True, port=5001)

@@ -25,7 +25,7 @@ def init_db():
         travel_date TEXT NOT NULL,
         passengers INTEGER NOT NULL,
         total_price REAL NOT NULL,
-        status TEXT NOT NULL
+        status TEXT NOT NULL DEFAULT 'Pending'
     )
     ''')
     conn.commit()
@@ -129,46 +129,38 @@ def get_booking(booking_id):
 def create_booking():
     data = request.json
     
+    # Validasi input
     if not all(key in data for key in ['user_id', 'destination_id', 'travel_date', 'passengers']):
         return jsonify({"error": "Missing required fields"}), 400
     
-    # Validate user exists
+    # Hitung total harga (dapatkan harga dari service destinasi)
     try:
-        user_response = requests.get(f"{USER_SERVICE_URL}/users/{data['user_id']}")
-        if user_response.status_code != 200:
-            return jsonify({"error": "User not found"}), 404
-    except requests.RequestException:
-        return jsonify({"error": "User service unavailable"}), 503
-    
-    # Validate and get destination details
-    try:
-        destination_response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations/{data['destination_id']}")
-        if destination_response.status_code != 200:
+        dest_response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations/{data['destination_id']}")
+        if dest_response.status_code != 200:
             return jsonify({"error": "Destination not found"}), 404
-        destination = destination_response.json()
+        destination = dest_response.json()
+        total_price = destination['price'] * data['passengers']
     except requests.RequestException:
         return jsonify({"error": "Destination service unavailable"}), 503
     
-    # Calculate total price
-    total_price = destination['price'] * data['passengers']
+    # Simpan booking dengan status Pending
     booking_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    
     conn = sqlite3.connect('bookings.db')
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT INTO bookings (user_id, destination_id, booking_date, travel_date, 
-                             passengers, total_price, status) 
+        INSERT INTO bookings (user_id, destination_id, booking_date, 
+                            travel_date, passengers, total_price, status) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            data['user_id'], 
-            data['destination_id'], 
-            booking_date, 
-            data['travel_date'], 
-            data['passengers'], 
-            total_price, 
-            'Confirmed'
+            data['user_id'],
+            data['destination_id'],
+            booking_date,
+            data['travel_date'],
+            data['passengers'],
+            total_price,
+            'Pending'  # Status default
         )
     )
     conn.commit()
@@ -177,14 +169,8 @@ def create_booking():
     
     return jsonify({
         "id": booking_id,
-        "user_id": data['user_id'],
-        "destination_id": data['destination_id'],
-        "booking_date": booking_date,
-        "travel_date": data['travel_date'],
-        "passengers": data['passengers'],
-        "total_price": total_price,
-        "status": "Confirmed",
-        "message": "Booking created successfully"
+        "status": "Pending",
+        "message": "Booking created. Waiting for admin confirmation."
     }), 201
 
 @app.route('/api/bookings/<int:booking_id>', methods=['PUT'])
