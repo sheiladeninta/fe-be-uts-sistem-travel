@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Destination - TRAVELY Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Edit Destination</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin_edit_destination', destination_id=destination.id) }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Destination Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ destination.name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required>{{ destination.description }}</textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="price" class="form-label">Price (Rp)</label>
+                                <input type="number" class="form-control" id="price" name="price" min="0" value="{{ destination.price }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="duration" class="form-label">Duration</label>
+                                <select class="form-select" id="duration" name="duration" required>
+                                    <option value="">Select duration</option>
+                                    <option value="2 days 1 night" {% if destination.duration == "2 days 1 night" %}selected{% endif %}>2 Days 1 Night</option>
+                                    <option value="3 days 2 nights" {% if destination.duration == "3 days 2 nights" %}selected{% endif %}>3 Days 2 Nights</option>
+                                    <option value="4 days 3 nights" {% if destination.duration == "4 days 3 nights" %}selected{% endif %}>4 Days 3 Nights</option>
+                                    <option value="5 days 4 nights" {% if destination.duration == "5 days 4 nights" %}selected{% endif %}>5 Days 4 Nights</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="image_url" class="form-label">Image URL</label>
+                            <input type="url" class="form-control" id="image_url" name="image_url" value="{{ destination.image_url }}" required
+                                   placeholder="https://example.com/image.jpg">
+                            <div class="form-text">Enter URL to destination image. Recommended size: 800x600px.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin_destinations') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Destination</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

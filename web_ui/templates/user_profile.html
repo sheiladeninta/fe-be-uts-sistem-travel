@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - TRAVELY{% endblock %}
+
+{% block content %}
+<div class="user-profile-page">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">My Profile</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="profile-avatar mb-3">
+                            <i class="fas fa-user-circle fa-6x text-secondary"></i>
+                        </div>
+                        <h4>{{ user.name }}</h4>
+                        <p class="text-muted">Member since: {{ session.user.get('join_date', 'January 2025') }}</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Name</label>
+                                <div class="form-control">{{ user.name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Email</label>
+                                <div class="form-control">{{ user.email }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Phone Number</label>
+                                <div class="form-control">{{ user.phone }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Password</label>
+                                <div class="form-control">••••••••</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions mt-4">
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                        <a href="{{ url_for('user_bookings') }}" class="btn btn-outline-info ms-2">
+                            <i class="fas fa-calendar-alt"></i> My Bookings
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Summary -->
+            <div class="row mt-4">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-plane-departure text-primary"></i> Travel Statistics</h5>
+                            <div class="stats-item d-flex justify-content-between mb-2">
+                                <span>Total Bookings:</span>
+                                <span class="fw-bold">{{ session.get('user_stats', {}).get('total_bookings', 0) }}</span>
+                            </div>
+                            <div class="stats-item d-flex justify-content-between mb-2">
+                                <span>Upcoming Trips:</span>
+                                <span class="fw-bold">{{ session.get('user_stats', {}).get('upcoming_trips', 0) }}</span>
+                            </div>
+                            <div class="stats-item d-flex justify-content-between mb-2">
+                                <span>Completed Trips:</span>
+                                <span class="fw-bold">{{ session.get('user_stats', {}).get('completed_trips', 0) }}</span>
+                            </div>
+                            <div class="stats-item d-flex justify-content-between">
+                                <span>Favorite Destination:</span>
+                                <span class="fw-bold">{{ session.get('user_stats', {}).get('favorite_destination', 'None yet') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-gift text-primary"></i> Rewards & Benefits</h5>
+                            <div class="loyalty-level mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Loyalty Level:</span>
+                                    <span class="badge bg-success">{{ session.get('user_stats', {}).get('loyalty_level', 'Standard') }}</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ session.get('user_stats', {}).get('loyalty_progress', 25) }}%"></div>
+                                </div>
+                                <small class="text-muted">{{ session.get('user_stats', {}).get('loyalty_progress', 25) }}% to next level</small>
+                            </div>
+                            <div class="points-info mb-3">
+                                <span>Travel Points: </span>
+                                <span class="fw-bold">{{ session.get('user_stats', {}).get('travel_points', 0) }} points</span>
+                            </div>
+                            <small class="text-muted">Earn points with every booking to redeem exclusive rewards!</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="editName" value="{{ user.name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editEmail" value="{{ user.email }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPhone" class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" id="editPhone" value="{{ user.phone }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="editPassword" placeholder="Leave blank to keep current password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm new password">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveProfileChanges">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // This is a placeholder for edit profile functionality
+        // In a real application, you would handle the form submission via AJAX
+        document.getElementById('saveProfileChanges').addEventListener('click', function() {
+            // Validate password match
+            const password = document.getElementById('editPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword && password !== '') {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            // Show success message and close modal
+            alert('Profile updated successfully!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
+            modal.hide();
+        });
+    });
+</script>
+{% endblock %}

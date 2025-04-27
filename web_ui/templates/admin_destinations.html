@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Destinations - TRAVELY Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Menghilangkan efek hover pada tabel */
+    .table tbody tr:hover {
+        background-color: inherit !important;
+    }
+
+    /* Memastikan header tabel polos */
+    .table thead {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Manage Destinations</h1>
+        <a href="{{ url_for('admin_add_destination') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Destination
+        </a>
+    </div>
+
+    {% if destinations %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for destination in destinations %}
+                <tr>
+                    <td>{{ destination.id }}</td>
+                    <td>{{ destination.name }}</td>
+                    <td>Rp {{ "{:,}".format(destination.price) }}</td>
+                    <td>{{ destination.duration }}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('admin_edit_destination', destination_id=destination.id) }}" 
+                               class="btn btn-sm btn-success">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteModal{{ destination.id }}">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                        
+                        <!-- Delete Confirmation Modal -->
+                        <div class="modal" id="deleteModal{{ destination.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Confirm Delete</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete "{{ destination.name }}"?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <form action="{{ url_for('admin_delete_destination', destination_id=destination.id) }}" method="POST">
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No destinations found. Please add new destinations.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

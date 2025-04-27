@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Explore Destinations - TRAVELY{% endblock %}
+
+{% block content %}
+<div class="destinations-page">
+    <div class="jumbotron text-center p-4 mb-4 bg-light rounded-3">
+        <h1 class="display-4">Explore Amazing Destinations</h1>
+        <p class="lead">Discover Indonesia's most beautiful places and create unforgettable memories</p>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" id="destination-search" class="form-control" placeholder="Search destinations...">
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-sort"></i></span>
+                <select id="destination-sort" class="form-select">
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="price-asc">Price (Low to High)</option>
+                    <option value="price-desc">Price (High to Low)</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                <select id="duration-filter" class="form-select">
+                    <option value="all">All Durations</option>
+                    <option value="2 days 1 night">2 Days 1 Night</option>
+                    <option value="3 days 2 nights">3 Days 2 Nights</option>
+                    <option value="4 days 3 nights">4 Days 3 Nights</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row" id="destinations-container">
+        {% if destinations %}
+            {% for destination in destinations %}
+                <div class="col-md-6 col-lg-4 mb-4 destination-card" 
+                     data-name="{{ destination.name.lower() }}" 
+                     data-price="{{ destination.price }}" 
+                     data-duration="{{ destination.duration }}">
+                    <div class="card h-100 shadow-sm">
+                        <img src="{{ destination.image_url }}" class="card-img-top" alt="{{ destination.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ destination.name }}</h5>
+                            <p class="card-text">{{ destination.description[:100] }}{% if destination.description|length > 100 %}...{% endif %}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-info text-dark">{{ destination.duration }}</span>
+                                <span class="text-primary fw-bold">Rp {{ "{:,}".format(destination.price) }}</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('booking', destination_id=destination.id) }}" class="btn btn-primary">Book Now</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h3>No destinations found</h3>
+                <p>Sorry, we couldn't find any destinations at the moment. Please try again later.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div id="no-results" class="text-center py-5" style="display: none;">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h3>No matching destinations</h3>
+        <p>Try adjusting your search criteria</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('destination-search');
+        const sortSelect = document.getElementById('destination-sort');
+        const durationFilter = document.getElementById('duration-filter');
+        const destinationsContainer = document.getElementById('destinations-container');
+        const noResults = document.getElementById('no-results');
+        const destinationCards = document.querySelectorAll('.destination-card');
+        
+        function filterAndSortDestinations() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const sortOption = sortSelect.value;
+            const durationOption = durationFilter.value;
+            
+            let visibleCount = 0;
+            
+            // Convert NodeList to Array for sorting
+            const cardsArray = Array.from(destinationCards);
+            
+            // Sort based on selected option
+            cardsArray.sort((a, b) => {
+                if (sortOption === 'name-asc') {
+                    return a.dataset.name.localeCompare(b.dataset.name);
+                } else if (sortOption === 'name-desc') {
+                    return b.dataset.name.localeCompare(a.dataset.name);
+                } else if (sortOption === 'price-asc') {
+                    return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+                } else if (sortOption === 'price-desc') {
+                    return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
+                }
+                return 0;
+            });
+            
+            // Clear container
+            destinationsContainer.innerHTML = '';
+            
+            // Append sorted and filtered cards
+            cardsArray.forEach(card => {
+                const name = card.dataset.name;
+                const duration = card.dataset.duration;
+                
+                // Apply filters
+                if (name.includes(searchTerm) && 
+                    (durationOption === 'all' || duration === durationOption)) {
+                    destinationsContainer.appendChild(card);
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Show/hide no results message
+            if (visibleCount === 0) {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        }
+        
+        // Event listeners
+        searchInput.addEventListener('input', filterAndSortDestinations);
+        sortSelect.addEventListener('change', filterAndSortDestinations);
+        durationFilter.addEventListener('change', filterAndSortDestinations);
+    });
+</script>
+{% endblock %}
