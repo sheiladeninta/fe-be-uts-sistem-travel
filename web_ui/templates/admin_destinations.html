@@ -13,6 +13,27 @@
     .table thead {
         background-color: #f8f9fa;
     }
+
+    /* Style supaya gambar rapi */
+    .destination-image {
+        width: 100px;
+        height: 75px;
+        object-fit: cover;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+
+    /* Style untuk gambar error */
+    .destination-image.error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        font-size: 12px;
+        text-align: center;
+        padding: 5px;
+    }
 </style>
 {% endblock %}
 
@@ -31,6 +52,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Image</th>
                     <th>Name</th>
                     <th>Price</th>
                     <th>Duration</th>
@@ -41,6 +63,16 @@
                 {% for destination in destinations %}
                 <tr>
                     <td>{{ destination.id }}</td>
+                    <td>
+                        {% if destination.image_url %}
+                        <img src="{{ destination.image_url }}" 
+                             alt="{{ destination.name }}" 
+                             class="destination-image"
+                             onerror="this.onerror=null; this.classList.add('error'); this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iNzUiIHZpZXdCb3g9IjAgMCAxMDAgNzUiPjx0ZXh0IHg9IjUwIiB5PSIzNy41IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjNmM3NTdkIj5JbWFnZSBub3QgZm91bmQ8L3RleHQ+PC9zdmc+';">
+                        {% else %}
+                        <div class="destination-image error">No image</div>
+                        {% endif %}
+                    </td>
                     <td>{{ destination.name }}</td>
                     <td>Rp {{ "{:,}".format(destination.price) }}</td>
                     <td>{{ destination.duration }}</td>

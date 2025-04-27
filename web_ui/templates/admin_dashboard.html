@@ -1,153 +1,192 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin Dashboard - TRAVELY{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Menghilangkan efek hover pada tabel */
+    .table tbody tr:hover {
+        background-color: inherit !important;
+    }
+
+    /* Memastikan header tabel polos */
+    .table thead {
+        background-color: #f8f9fa;
+    }
+
+    /* Style supaya gambar rapi */
+    .destination-image {
+        width: 100px;
+        height: 75px;
+        object-fit: cover;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+
+    /* Style untuk gambar error */
+    .destination-image.error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        font-size: 12px;
+        text-align: center;
+        padding: 5px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container py-4">
     <h1 class="mb-4">Admin Dashboard</h1>
     
+    <!-- Statistics Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-primary text-white">
                 <div class="card-body">
                     <h5 class="card-title">Total Users</h5>
-                    <h2>{{ stats.users_count }}</h2>
+                    <p class="card-text display-4">{{ stats.users_count }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-success text-white">
                 <div class="card-body">
                     <h5 class="card-title">Total Bookings</h5>
-                    <h2>{{ stats.bookings_count }}</h2>
+                    <p class="card-text display-4">{{ stats.bookings_count }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark">
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
                 <div class="card-body">
-                    <h5 class="card-title">Destinations</h5>
-                    <h2>{{ stats.destinations_count }}</h2>
+                    <h5 class="card-title">Total Destinations</h5>
+                    <p class="card-text display-4">{{ stats.destinations_count }}</p>
                 </div>
             </div>
         </div>
     </div>
-
+    
+    <!-- Recent Bookings -->
     <div class="card mb-4">
         <div class="card-header">
-            <h4>Recent Bookings</h4>
+            <h5 class="mb-0">Recent Bookings</h5>
         </div>
         <div class="card-body">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        <th>Destination</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for booking in stats.recent_bookings %}
-                    <tr>
-                        <td>{{ booking.id }}</td>
-                        <td>
-                            {% if booking.user %}
-                                {{ booking.user.name }}
-                            {% else %}
-                                Unknown User
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if booking.destination %}
-                                {{ booking.destination.name }}
-                            {% else %}
-                                Unknown Destination
-                            {% endif %}
-                        </td>
-                        <td>{{ booking.travel_date }}</td>
-                        <td>
-                            <span class="badge bg-{{ 'success' if booking.status == 'Confirmed' else 'warning' if booking.status == 'Pending' else 'danger' }}">
-                                {{ booking.status }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if booking.status == 'Pending' %}
-                                <button class="btn btn-success btn-sm" onclick="updateStatus({{ booking.id }}, 'Confirmed')">Confirm</button>
-                                <button class="btn btn-danger btn-sm" onclick="updateStatus({{ booking.id }}, 'Rejected')">Reject</button>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            {% if stats.recent_bookings %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Destination</th>
+                            <th>Travel Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in stats.recent_bookings %}
+                        <tr>
+                            <td>{{ booking.id }}</td>
+                            <td>{{ booking.user_name }}</td>
+                            <td>{{ booking.destination_name }}</td>
+                            <td>{{ booking.travel_date }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if booking.status == 'Confirmed' else 'warning' }}">
+                                    {{ booking.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No recent bookings found.
+            </div>
+            {% endif %}
         </div>
     </div>
-
+    
+    <!-- Recent Destinations -->
     <div class="card">
         <div class="card-header">
-            <h4>Recent Destinations</h4>
+            <h5 class="mb-0">Recent Destinations</h5>
         </div>
         <div class="card-body">
             {% if stats.recent_destinations %}
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Duration</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for destination in stats.recent_destinations %}
-                    <tr>
-                        <td>{{ destination.id }}</td>
-                        <td>{{ destination.name }}</td>
-                        <td>Rp {{ "{:,}".format(destination.price) }}</td>
-                        <td>{{ destination.duration }}</td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <a href="{{ url_for('admin_edit_destination', destination_id=destination.id) }}" 
-                                   class="btn btn-sm btn-success">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#deleteModal{{ destination.id }}">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                            <!-- Delete Confirmation Modal -->
-                            <div class="modal" id="deleteModal{{ destination.id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Confirm Delete</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            Are you sure you want to delete "{{ destination.name }}"?
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <form action="{{ url_for('admin_delete_destination', destination_id=destination.id) }}" method="POST">
-                                                <button type="submit" class="btn btn-danger">Delete</button>
-                                            </form>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Duration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for destination in stats.recent_destinations %}
+                        <tr>
+                            <td>{{ destination.id }}</td>
+                            <td>
+                                {% if destination.image_url %}
+                                <img src="{{ destination.image_url }}" 
+                                     alt="{{ destination.name }}" 
+                                     class="destination-image"
+                                     onerror="this.onerror=null; this.classList.add('error'); this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iNzUiIHZpZXdCb3g9IjAgMCAxMDAgNzUiPjx0ZXh0IHg9IjUwIiB5PSIzNy41IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjNmM3NTdkIj5JbWFnZSBub3QgZm91bmQ8L3RleHQ+PC9zdmc+';">
+                                {% else %}
+                                <div class="destination-image error">No image</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ destination.name }}</td>
+                            <td>Rp {{ "{:,}".format(destination.price) }}</td>
+                            <td>{{ destination.duration }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('admin_edit_destination', destination_id=destination.id) }}" 
+                                       class="btn btn-sm btn-success">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ destination.id }}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                                
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal" id="deleteModal{{ destination.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirm Delete</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete "{{ destination.name }}"?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('admin_delete_destination', destination_id=destination.id) }}" method="POST">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
             <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i> No recent destinations found.
@@ -156,30 +195,4 @@
         </div>
     </div>
 </div>
-
-{% raw %}
-<script>
-function updateStatus(bookingId, newStatus) {
-    if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this booking?`)) {
-        fetch(`http://localhost:5003/api/bookings/${bookingId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: newStatus })
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message || "Status updated");
-            location.reload();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert("Failed to update status.");
-        });
-    }
-}
-</script>
-{% endraw %}
-
 {% endblock %}

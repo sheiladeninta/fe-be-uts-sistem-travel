@@ -11,7 +11,7 @@
                     <h4 class="mb-0">Add New Destination</h4>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('admin_add_destination') }}">
+                    <form method="POST" action="{{ url_for('admin_add_destination') }}" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="name" class="form-label">Destination Name</label>
                             <input type="text" class="form-control" id="name" name="name" required>
@@ -40,10 +40,12 @@
                         </div>
                         
                         <div class="mb-4">
-                            <label for="image_url" class="form-label">Image URL</label>
-                            <input type="url" class="form-control" id="image_url" name="image_url" required
-                                   placeholder="https://example.com/image.jpg">
-                            <div class="form-text">Enter URL to destination image. Recommended size: 800x600px.</div>
+                            <label for="image" class="form-label">Destination Image</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                            <div class="form-text">Upload an image for the destination. Recommended size: 800x600px. Supported formats: JPG, PNG, GIF.</div>
+                            <div id="imagePreview" class="mt-2" style="display: none;">
+                                <img src="" alt="Preview" class="img-thumbnail" style="max-height: 200px;">
+                            </div>
                         </div>
                         
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -56,4 +58,21 @@
         </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+document.getElementById('image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.style.display = 'block';
+            preview.querySelector('img').src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

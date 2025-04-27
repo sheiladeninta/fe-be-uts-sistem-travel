@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 import requests
 import json
 from datetime import datetime, timedelta
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'travely_secret_key'
@@ -11,8 +13,39 @@ USER_SERVICE_URL = "http://localhost:5001/api"
 DESTINATION_SERVICE_URL = "http://localhost:5002/api"
 BOOKING_SERVICE_URL = "http://localhost:5003/api"
 
+# Konfigurasi upload file
+UPLOAD_FOLDER = os.path.join('web_ui', 'static', 'uploads', 'images')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'jfif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Pastikan folder uploads ada
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_image(file):
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        # Tambahkan timestamp untuk menghindari nama file yang sama
+        filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        # Return path relatif untuk akses melalui web
+        return f"/static/uploads/images/{filename}"
+    return None
+
+@app.route('/static/uploads/images/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 @app.route('/')
 def index():
+    # Jika user adalah admin, redirect ke admin dashboard
+    if 'admin' in session:
+        return redirect(url_for('admin_dashboard'))
+        
     try:
         response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations")
         destinations = response.json()['destinations'] if response.status_code == 200 else []
@@ -312,12 +345,25 @@ def admin_add_destination():
         return redirect(url_for('admin_login'))
     
     if request.method == 'POST':
+        # Handle file upload
+        image_url = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file.filename == '':
+                flash('No image selected', 'danger')
+                return render_template('admin_add_destination.html')
+            
+            image_url = save_image(file)
+            if not image_url:
+                flash('Invalid image file. Please upload a valid image (JPG, PNG, or GIF).', 'danger')
+                return render_template('admin_add_destination.html')
+        
         destination_data = {
             'name': request.form['name'],
             'description': request.form['description'],
             'price': float(request.form['price']),
             'duration': request.form['duration'],
-            'image_url': request.form['image_url']
+            'image_url': image_url
         }
         
         try:
@@ -344,12 +390,31 @@ def admin_edit_destination(destination_id):
     
     try:
         if request.method == 'POST':
+            # Get current destination data
+            dest_response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations/{destination_id}")
+            if dest_response.status_code != 200:
+                flash('Destination not found', 'danger')
+                return redirect(url_for('admin_destinations'))
+            current_destination = dest_response.json()
+            
+            # Handle file upload
+            image_url = current_destination['image_url']
+            if 'image' in request.files:
+                file = request.files['image']
+                if file.filename != '':  # Only process if a new file was uploaded
+                    new_image_url = save_image(file)
+                    if new_image_url:
+                        image_url = new_image_url
+                    else:
+                        flash('Invalid image file. Please upload a valid image (JPG, PNG, or GIF).', 'danger')
+                        return render_template('admin_edit_destination.html', destination=current_destination)
+            
             destination_data = {
                 'name': request.form['name'],
                 'description': request.form['description'],
                 'price': float(request.form['price']),
                 'duration': request.form['duration'],
-                'image_url': request.form['image_url']
+                'image_url': image_url
             }
             
             response = requests.put(
