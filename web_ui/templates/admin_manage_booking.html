@@ -1,0 +1,74 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Manage Bookings{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Bookings</h2>
+    <table class="table table-bordered table-striped">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Destination</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.id }}</td>
+                <td>{{ booking.user_name }}</td>
+                <td>{{ booking.destination_name }}</td>
+                <td>{{ booking.travel_date }}</td>
+                <td>
+                    <span class="badge 
+                        {% if booking.status|lower == 'confirmed' %}bg-success
+                        {% elif booking.status|lower == 'pending' %}bg-warning
+                        {% elif booking.status|lower == 'rejected' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {{ booking.status|capitalize }}
+                    </span>
+                </td>
+                <td>
+                    {% if booking.status == 'Pending' %}
+                        <button class="btn btn-success btn-sm" onclick="updateStatus({{ booking.id }}, 'Confirmed')">Confirm</button>
+                        <button class="btn btn-danger btn-sm" onclick="updateStatus({{ booking.id }}, 'Rejected')">Reject</button>
+                    {% else %}
+                         -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% raw %}
+<script>
+function updateStatus(bookingId, newStatus) {
+    if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this booking?`)) {
+        fetch(`http://localhost:5003/api/bookings/${bookingId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message || "Status updated");
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Failed to update status.");
+        });
+    }
+}
+</script>
+{% endraw %}
+
+{% endblock %}

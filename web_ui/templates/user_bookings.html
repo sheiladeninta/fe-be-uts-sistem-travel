@@ -12,8 +12,16 @@
                         <div class="card shadow-sm h-100">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Booking #{{ booking.id }}</h5>
-                                <span class="badge bg-success">Confirmed</span>
+                                <span class="badge 
+                                    {% if booking.status|lower == 'confirmed' %}bg-success
+                                    {% elif booking.status|lower == 'pending' %}bg-warning
+                                    {% elif booking.status|lower == 'rejected' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ booking.status|default('pending')|capitalize }}
+                                </span>
+
                             </div>
+                            
                             <div class="card-body">
                                 <div class="mb-3">
                                     <h6>Destination:</h6>

@@ -5,8 +5,8 @@
 {% block content %}
 <div class="index-page">
     <!-- Hero Section -->
-    <div class="hero-section">
-        <div class="hero-content text-center p-5 rounded">
+    <div class="hero-section text-center text-white d-flex justify-content-center align-items-center">
+        <div class="hero-content p-5 rounded shadow-lg">
             <h1 class="display-3 fw-bold">Discover Indonesia's Beauty</h1>
             <p class="lead">Experience unforgettable journeys with our carefully crafted travel packages</p>
             <div class="mt-4">
@@ -19,155 +19,128 @@
     </div>
 
     <!-- Features Section -->
-    <div class="features-section py-5">
+    <section class="features-section py-5 bg-white">
         <div class="container">
             <div class="row text-center">
                 <div class="col-md-4 mb-4">
                     <div class="feature-card p-4 rounded shadow-sm">
                         <i class="fas fa-map-marked-alt fa-3x text-primary mb-3"></i>
-                        <h3>Handpicked Destinations</h3>
+                        <h4 class="fw-semibold">Handpicked Destinations</h4>
                         <p>Explore the most beautiful places in Indonesia carefully selected by our travel experts.</p>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
                     <div class="feature-card p-4 rounded shadow-sm">
                         <i class="fas fa-calendar-check fa-3x text-primary mb-3"></i>
-                        <h3>Easy Booking</h3>
+                        <h4 class="fw-semibold">Easy Booking</h4>
                         <p>Book your dream trip in minutes with our simple and secure booking system.</p>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
                     <div class="feature-card p-4 rounded shadow-sm">
                         <i class="fas fa-headset fa-3x text-primary mb-3"></i>
-                        <h3>24/7 Support</h3>
+                        <h4 class="fw-semibold">24/7 Support</h4>
                         <p>Our dedicated team is always ready to assist you before, during, and after your journey.</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Popular Destinations Section -->
-    <div class="popular-destinations py-5 bg-light">
+    <!-- Popular Destinations -->
+    <section class="popular-destinations py-5 bg-light">
         <div class="container">
             <h2 class="text-center mb-4">Popular Destinations</h2>
-            
+
             {% if destinations %}
-                <div class="row">
-                    <!-- Show only top 3 destinations -->
-                    {% for destination in destinations[:3] %}
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100 shadow-sm destination-highlight">
-                                <img src="{{ destination.image_url }}" class="card-img-top" alt="{{ destination.name }}">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ destination.name }}</h5>
-                                    <p class="card-text">{{ destination.description[:100] }}{% if destination.description|length > 100 %}...{% endif %}</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-info text-dark">{{ destination.duration }}</span>
-                                        <span class="text-primary fw-bold">Rp {{ "{:,}".format(destination.price) }}</span>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-white">
-                                    <div class="d-grid">
-                                        <a href="{{ url_for('booking', destination_id=destination.id) }}" class="btn btn-primary">Book Now</a>
-                                    </div>
-                                </div>
+            <div class="row">
+                {% for destination in destinations[:3] %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm destination-highlight">
+                        <img src="{{ destination.image_url }}" class="card-img-top" alt="{{ destination.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ destination.name }}</h5>
+                            <p class="card-text">{{ destination.description[:100] }}{% if destination.description|length > 100 %}...{% endif %}</p>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-info text-dark">{{ destination.duration }}</span>
+                                <span class="fw-bold text-primary">Rp {{ "{:,}".format(destination.price) }}</span>
                             </div>
                         </div>
-                    {% endfor %}
+                        <div class="card-footer bg-white border-0">
+                            <a href="{{ url_for('booking', destination_id=destination.id) }}" class="btn btn-primary w-100">Book Now</a>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="text-center mt-4">
-                    <a href="{{ url_for('destinations') }}" class="btn btn-outline-primary">View All Destinations</a>
-                </div>
+                {% endfor %}
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('destinations') }}" class="btn btn-outline-primary">View All Destinations</a>
+            </div>
             {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <h3>No destinations available</h3>
-                    <p>Please check back later for our exciting travel packages.</p>
-                </div>
+            <div class="text-center py-5">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h3>No destinations available</h3>
+                <p>Please check back later for our exciting travel packages.</p>
+            </div>
             {% endif %}
         </div>
-    </div>
+    </section>
 
-    <!-- Testimonials Section -->
-    <div class="testimonials py-5">
+    <!-- Testimonials -->
+    <section class="testimonials py-5">
         <div class="container">
             <h2 class="text-center mb-4">What Our Travelers Say</h2>
-            
             <div class="row">
-                <div class="col-md-4 mb-4">
+                <div class="col-md-4 mb-4" >
                     <div class="card h-100 testimonial-card">
                         <div class="card-body">
                             <div class="testimonial-rating mb-2">
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
+                                {% for i in range(5) %}<i class="fas fa-star text-warning"></i>{% endfor %}
                             </div>
-                            <p class="card-text testimonial-text">"Our trip to Bali with TRAVELY was absolutely amazing! Everything was well organized, and the guides were knowledgeable and friendly."</p>
-                            <div class="testimonial-author">
-                                <div class="d-flex align-items-center">
-                                    <div class="testimonial-avatar me-2">
-                                        <i class="fas fa-user-circle fa-2x text-secondary"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0">Sarah Johnson</h6>
-                                        <small class="text-muted">Traveled to Bali</small>
-                                    </div>
+                            <p class="testimonial-text">"Our trip to Bali with TRAVELY was absolutely amazing!"</p>
+                            <div class="testimonial-author d-flex align-items-center">
+                                <i class="fas fa-user-circle fa-2x text-secondary me-2"></i>
+                                <div>
+                                    <h6 class="mb-0">Sarah Johnson</h6>
+                                    <small class="text-muted">Traveled to Bali</small>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-md-4 mb-4">
+
+                <div class="col-md-4 mb-4" >
                     <div class="card h-100 testimonial-card">
                         <div class="card-body">
                             <div class="testimonial-rating mb-2">
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
+                                {% for i in range(4) %}<i class="fas fa-star text-warning"></i>{% endfor %}
                                 <i class="fas fa-star-half-alt text-warning"></i>
                             </div>
-                            <p class="card-text testimonial-text">"Yogyakarta Heritage Tour exceeded our expectations. The temples were breathtaking and the local cuisines were delicious. Will definitely book with TRAVELY again!"</p>
-                            <div class="testimonial-author">
-                                <div class="d-flex align-items-center">
-                                    <div class="testimonial-avatar me-2">
-                                        <i class="fas fa-user-circle fa-2x text-secondary"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0">Michael Thompson</h6>
-                                        <small class="text-muted">Traveled to Yogyakarta</small>
-                                    </div>
+                            <p class="testimonial-text">"Yogyakarta Heritage Tour exceeded our expectations."</p>
+                            <div class="testimonial-author d-flex align-items-center">
+                                <i class="fas fa-user-circle fa-2x text-secondary me-2"></i>
+                                <div>
+                                    <h6 class="mb-0">Michael Thompson</h6>
+                                    <small class="text-muted">Traveled to Yogyakarta</small>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-md-4 mb-4">
+
+                <div class="col-md-4 mb-4" >
                     <div class="card h-100 testimonial-card">
                         <div class="card-body">
                             <div class="testimonial-rating mb-2">
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
+                                {% for i in range(5) %}<i class="fas fa-star text-warning"></i>{% endfor %}
                             </div>
-                            <p class="card-text testimonial-text">"The diving experience in Raja Ampat was incredible. Crystal clear waters and amazing marine life. The TRAVELY team made sure everything was perfect. Highly recommend!"</p>
-                            <div class="testimonial-author">
-                                <div class="d-flex align-items-center">
-                                    <div class="testimonial-avatar me-2">
-                                        <i class="fas fa-user-circle fa-2x text-secondary"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0">Amanda Rodriguez</h6>
-                                        <small class="text-muted">Traveled to Raja Ampat</small>
-                                    </div>
+                            <p class="testimonial-text">"The diving experience in Raja Ampat was incredible!"</p>
+                            <div class="testimonial-author d-flex align-items-center">
+                                <i class="fas fa-user-circle fa-2x text-secondary me-2"></i>
+                                <div>
+                                    <h6 class="mb-0">Amanda Rodriguez</h6>
+                                    <small class="text-muted">Traveled to Raja Ampat</small>
                                 </div>
                             </div>
                         </div>
@@ -175,12 +148,12 @@
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Call To Action Section -->
-    <div class="cta-section py-5 text-center">
+    <!-- CTA -->
+    <section class="cta-section py-5 text-center">
         <div class="container">
-            <div class="cta-content p-4 rounded">
+            <div class="cta-content p-4 rounded shadow">
                 <h2 class="display-5 mb-3">Ready for Your Next Adventure?</h2>
                 <p class="lead mb-4">Book your dream trip today and create memories that last a lifetime</p>
                 <div>
@@ -191,65 +164,70 @@
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
     .hero-section {
-        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://via.placeholder.com/1900x1000?text=Indonesia+Landscape');
+        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                    url('https://images.pexels.com/photos/15879944/pexels-photo-15879944.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260');
         background-size: cover;
         background-position: center;
-        color: white;
-        padding: 120px 0;
-        margin-top: -1.5rem;
-        margin-bottom: 2rem;
+        min-height: 80vh;
     }
-    
+
     .hero-content {
-        max-width: 800px;
-        margin: 0 auto;
-        background-color: rgba(0, 0, 0, 0.4);
+        background-color: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        max-width: 700px;
     }
-    
+
     .feature-card {
-        height: 100%;
-        transition: transform 0.3s;
-        background-color: white;
+        background-color: #f9f9f9;
+        border-left: 4px solid #0d6efd;
+        transition: transform 0.3s ease;
     }
-    
+
     .feature-card:hover {
-        transform: translateY(-10px);
+        transform: translateY(-8px);
     }
-    
+
     .destination-highlight {
-        transition: transform 0.3s;
+        transition: all 0.3s ease;
     }
-    
+
     .destination-highlight:hover {
-        transform: translateY(-5px);
+        transform: scale(1.02);
     }
-    
+
     .testimonial-card {
-        border-top: 3px solid #007bff;
+        border-top: 4px solid #0d6efd;
+        background: #fff;
     }
-    
+
     .testimonial-text {
         font-style: italic;
+        color: #444;
     }
-    
+
     .cta-section {
-        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://via.placeholder.com/1900x800?text=Travel+Indonesia');
+        background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+                    url('https://via.placeholder.com/1900x800?text=Travel+Indonesia');
         background-size: cover;
         background-position: center;
-        color: white;
+        color: #fff;
     }
-    
+
     .cta-content {
-        max-width: 800px;
-        margin: 0 auto;
-        background-color: rgba(0, 0, 0, 0.4);
+        background-color: rgba(0, 0, 0, 0.6);
+        max-width: 700px;
+        margin: auto;
+    }
+
+    .badge.bg-info {
+        background-color: #9BCCEC !important;
     }
 </style>
 {% endblock %}
