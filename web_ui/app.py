@@ -240,49 +240,117 @@ def booking_detail(booking_id):
     
     return render_template('booking_detail.html', booking=booking)
 
+
+from functools import wraps
+from flask import session, redirect, url_for, flash
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin'):
+            # Clear any existing user session if trying to access admin area
+            if 'user' in session:
+                session.pop('user')
+            flash('Admin access required', 'danger')
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# @app.before_request
+# def protect_admin_routes():
+#     admin_routes = ['/admin/dashboard']  # Tambahkan route admin lainnya di sini
+    
+#     if request.path.startswith('/admin'):
+#         if not session.get('admin'):
+#             flash('Admin access required', 'danger')
+#             return redirect(url_for('admin_login'))
+
+
 @app.route('/admin/dashboard')
+@admin_required
 def admin_dashboard():
     try:
-        # Ambil data dari berbagai service
+        # Ambil data dengan timeout
         users = requests.get(f"{USER_SERVICE_URL}/users").json().get('users', [])
         bookings = requests.get(f"{BOOKING_SERVICE_URL}/bookings?limit=5").json().get('bookings', [])
         destinations = requests.get(f"{DESTINATION_SERVICE_URL}/destinations").json().get('destinations', [])
-        
+       
         stats = {
             'users_count': len(users),
             'bookings_count': len(bookings),
             'destinations_count': len(destinations),
-            'recent_bookings': bookings 
+            'recent_bookings': bookings
         }
+        return render_template('admin_dashboard.html', stats=stats)
+        
     except requests.RequestException as e:
-        # Error handling
-        stats = {'users_count': 0, 'bookings_count': 0, 'destinations_count': 0, 'recent_bookings': []}
-        flash('Failed to load data from services', 'danger')
+        app.logger.error(f"Service error: {str(e)}")
+        flash("Failed to load data from services", "danger")
+        return render_template('admin_dashboard.html', stats=None)  # Kirim stats kosong
     
-    return render_template('admin_dashboard.html', stats=stats)
+
+@app.route('/admin/bookings')
+@admin_required
+def admin_bookings():
+    try:
+        users = requests.get(f"{USER_SERVICE_URL}/users").json().get('users', [])
+        bookings = requests.get(f"{BOOKING_SERVICE_URL}/bookings").json().get('bookings', [])
+        destinations = requests.get(f"{DESTINATION_SERVICE_URL}/destinations").json().get('destinations', [])
+
+        # Bikin dictionary buat lookup cepat
+        user_dict = {user['id']: user for user in users}
+        destination_dict = {dest['id']: dest for dest in destinations}
+
+        # Update setiap booking supaya punya user_name dan destination_name
+        for booking in bookings:
+            booking['user_name'] = user_dict.get(booking['user_id'], {}).get('name', 'Unknown User')
+            booking['destination_name'] = destination_dict.get(booking['destination_id'], {}).get('name', 'Unknown Destination')
+
+        return render_template('admin_manage_booking.html', bookings=bookings, users=users, destinations=destinations)
+    except requests.RequestException as e:
+        app.logger.error(f"Service error: {str(e)}")
+        flash("Failed to load bookings data", "danger")
+        return render_template('admin_manage_booking.html', bookings=[])
+
+
 
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
+    # If already logged in as admin
+    if session.get('admin'):
+        return redirect(url_for('admin_dashboard'))
+    
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if not username or not password:
+            flash('Please fill all fields', 'danger')
+            return render_template('admin_login.html')
 
         try:
             response = requests.post(
-                f"{USER_SERVICE_URL}/admins/auth", 
-                json={"username": username, "password": password}
+                f"{USER_SERVICE_URL}/admins/auth",
+                json={"username": username, "password": password},
+                timeout=5
             )
 
             if response.status_code == 200 and response.json().get('success'):
+                # Clear any existing user session
+                session.clear()
                 session['admin'] = response.json()['admin']
                 flash('Admin login successful', 'success')
                 return redirect(url_for('admin_dashboard'))
             else:
-                flash('Invalid username or password', 'danger')
-        except requests.RequestException:
-            flash('Unable to connect to user service', 'danger')
+                flash('Invalid admin credentials', 'danger')
+        except requests.RequestException as e:
+            app.logger.error(f"Auth service error: {str(e)}")
+            flash('Unable to connect to authentication service', 'danger')
     
     return render_template('admin_login.html')
 
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+

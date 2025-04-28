@@ -270,7 +270,6 @@ def get_admin(admin_id):
         return jsonify(dict(admin))
     return jsonify({"error": "Admin not found"}), 404
 
-
 if __name__ == '__main__':
     init_db()
     create_sample_users()

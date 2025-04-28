@@ -10,10 +10,10 @@
                         <h3 class="mb-0">Booking Details</h3>
                     </div>
                     <div class="card-body">
-                        <div class="booking-id mb-4">
+                        <!-- <div class="booking-id mb-4">
                             <h5>Booking #{{ booking.id }}</h5>
                             <span class="badge bg-success">Confirmed</span>
-                        </div>
+                        </div> -->
                         
                         <div class="booking-info">
                             <div class="row mb-3">
@@ -82,9 +82,14 @@
                             <div class="row mb-3">
                                 <div class="col-md-4 fw-bold">Status</div>
                                 <div class="col-md-8">
-                                    <span class="badge {% if booking.status == 'confirmed' %}bg-success{% elif booking.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
-                                        {{ booking.status|capitalize }}
+                                    <span class="badge 
+                                        {% if booking.status|lower == 'confirmed' %}bg-success
+                                        {% elif booking.status|lower == 'pending' %}bg-warning
+                                        {% elif booking.status|lower == 'rejected' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ booking.status|default('pending')|capitalize }}
                                     </span>
+
                                 </div>
                             </div>
                             {% endif %}
@@ -93,7 +98,7 @@
                         <hr>
                         
                         <div class="booking-actions">
-                            <a href="{{ url_for('user_bookings') }}" class="btn btn-secondary">Back to My Bookings</a>
+                            <a href="{{ url_for('user_bookings') }}" class="btn btn-primary">Back to My Bookings</a>
                             
                             <!-- Optional: Add more actions based on booking status -->
                             {% if booking.status is not defined or booking.status == 'confirmed' %}
