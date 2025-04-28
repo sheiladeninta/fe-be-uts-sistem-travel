@@ -50,26 +50,45 @@ def destination_detail(destination_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    error = None
     if request.method == 'POST':
-        email = request.form['email']
+        email_or_username = request.form['email_or_username']
         password = request.form['password']
-        
+
+        # Step 1: Coba login sebagai User
         try:
-            response = requests.post(
-                f"{USER_SERVICE_URL}/users/auth", 
-                json={"email": email, "password": password}
+            user_response = requests.post(
+                f"{USER_SERVICE_URL}/users/auth",
+                json={"email": email_or_username, "password": password}
             )
-            
-            if response.status_code == 200 and response.json().get('success'):
-                session['user'] = response.json()['user']
-                flash('Login successful', 'success')
+
+            if user_response.status_code == 200 and user_response.json().get('success'):
+                session['user'] = user_response.json()['user']
+                flash('Login successful as User', 'success')
                 return redirect(url_for('index'))
-            else:
-                flash('Invalid email or password', 'danger')
         except requests.RequestException:
             flash('Unable to connect to user service', 'danger')
-    
-    return render_template('login.html')
+            return render_template('login.html', error="Service unavailable.")
+
+        # Step 2: Kalau gagal login User, coba login Admin
+        try:
+            admin_response = requests.post(
+                f"{USER_SERVICE_URL}/admins/auth",
+                json={"username": email_or_username, "password": password}
+            )
+
+            if admin_response.status_code == 200 and admin_response.json().get('success'):
+                session['admin'] = admin_response.json()['admin']
+                flash('Login successful as Admin', 'success')
+                return redirect(url_for('admin_dashboard'))
+        except requests.RequestException:
+            flash('Unable to connect to admin service', 'danger')
+            return render_template('login.html', error="Service unavailable.")
+
+        # Kalau dua-duanya gagal
+        error = "Invalid email/username or password."
+
+    return render_template('login.html', error=error)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

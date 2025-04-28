@@ -202,22 +202,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Call To Action Section -->
-    <div class="cta-section py-5 text-center">
-        <div class="container">
-            <div class="cta-content p-4 rounded">
-                <h2 class="display-5 mb-3">Ready for Your Next Adventure?</h2>
-                <p class="lead mb-4">Book your dream trip today and create memories that last a lifetime</p>
-                <div>
-                    <a href="{{ url_for('destinations') }}" class="btn btn-primary btn-lg">Explore Destinations</a>
-                    {% if not session.get('user') %}
-                    <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg ms-2">Sign Up Now</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
 
