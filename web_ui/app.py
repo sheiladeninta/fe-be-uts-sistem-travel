@@ -208,6 +208,14 @@ def user_bookings():
         bookings_response = requests.get(f"{BOOKING_SERVICE_URL}/bookings/user/{user_id}")
         if bookings_response.status_code == 200:
             bookings = bookings_response.json()['bookings']
+            # Hitung total bookings dengan status Confirmed
+            confirmed_count = sum(1 for booking in bookings if booking.get('status', '').lower() == 'confirmed')
+
+            # Simpan ke session
+            session['user_stats'] = {
+                'total_bookings': confirmed_count
+            }
+            session.modified = True
         else:
             bookings = []
             flash('Unable to retrieve booking data', 'danger')
@@ -240,7 +248,6 @@ def booking_detail(booking_id):
     
     return render_template('booking_detail.html', booking=booking)
 
-
 from functools import wraps
 from flask import session, redirect, url_for, flash
 
@@ -255,17 +262,6 @@ def admin_required(f):
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
-
-
-# @app.before_request
-# def protect_admin_routes():
-#     admin_routes = ['/admin/dashboard']  # Tambahkan route admin lainnya di sini
-    
-#     if request.path.startswith('/admin'):
-#         if not session.get('admin'):
-#             flash('Admin access required', 'danger')
-#             return redirect(url_for('admin_login'))
-
 
 @app.route('/admin/dashboard')
 @admin_required
@@ -289,7 +285,6 @@ def admin_dashboard():
         flash("Failed to load data from services", "danger")
         return render_template('admin_dashboard.html', stats=None)  # Kirim stats kosong
     
-
 @app.route('/admin/bookings')
 @admin_required
 def admin_bookings():
@@ -313,8 +308,6 @@ def admin_bookings():
         flash("Failed to load bookings data", "danger")
         return render_template('admin_manage_booking.html', bookings=[])
 
-
-
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
     # If already logged in as admin
@@ -327,7 +320,7 @@ def admin_login():
 
         if not username or not password:
             flash('Please fill all fields', 'danger')
-            return render_template('admin_login.html')
+            return render_template('login.html')
 
         try:
             response = requests.post(
@@ -348,8 +341,50 @@ def admin_login():
             app.logger.error(f"Auth service error: {str(e)}")
             flash('Unable to connect to authentication service', 'danger')
     
-    return render_template('admin_login.html')
+    return render_template('login.html')
 
+@app.route('/api/update_profile/<int:user_id>', methods=['PUT'])
+def update_profile(user_id):
+    if 'user' not in session or session['user']['id'] != user_id:
+        return jsonify({'success': False, 'error': 'Unauthorized access'}), 403
+    
+    data = request.json
+    
+    # Validasi data
+    if not all(key in data for key in ['name', 'email', 'phone']):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    
+    # Siapkan data untuk update
+    update_data = {
+        'name': data['name'],
+        'email': data['email'],
+        'phone': data['phone']
+    }
+    
+    # Tambahkan password jika ada
+    if 'password' in data and data['password']:
+        update_data['password'] = data['password']
+    
+    try:
+        # Kirim request update ke user service
+        response = requests.put(
+            f"{USER_SERVICE_URL}/users/{user_id}",
+            json=update_data
+        )
+        
+        if response.status_code == 200:
+            # Update session data juga
+            session['user']['name'] = data['name']
+            session['user']['email'] = data['email']
+            session['user']['phone'] = data['phone']
+            
+            session.modified = True
+            
+            return jsonify({'success': True, 'message': 'Profile updated successfully'})
+        else:
+            return jsonify({'success': False, 'error': response.json().get('error', 'Update failed')}), response.status_code
+    except requests.RequestException:
+        return jsonify({'success': False, 'error': 'Unable to connect to user service'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

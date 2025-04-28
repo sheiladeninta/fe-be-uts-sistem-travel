@@ -1,12 +1,24 @@
 {% extends "base.html" %}
-
 {% block title %}Book Your Trip - TRAVELY{% endblock %}
-
 {% block content %}
 <style>
     .duration-badge {
         background-color: #9BCCEC;
         color: #000;
+    }
+    .payment-info {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .bank-details {
+        margin-top: 10px;
+        padding: 10px;
+        border-left: 3px solid #0d6efd;
+    }
+    .payment-confirmation {
+        margin-top: 15px;
     }
 </style>
 <div class="booking-page">
@@ -31,7 +43,7 @@
                         </div>
                     </div>
                     
-                    <form method="post">
+                    <form method="post" id="booking-form">
                         <div class="mb-3">
                             <label for="travel_date" class="form-label">Travel Date</label>
                             <input type="date" class="form-control" id="travel_date" name="travel_date" 
@@ -65,8 +77,65 @@
                             </div>
                         </div>
                         
+                        <!-- Payment Information Section -->
+                        <div class="payment-info">
+                            <h5>Payment Information</h5>
+                            <p>Please complete your payment using one of the following methods:</p>
+                            
+                            <div class="accordion" id="paymentAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="mandiriHeading">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                            data-bs-target="#mandiriCollapse" aria-expanded="true" aria-controls="mandiriCollapse">
+                                            MANDIRI M-Banking
+                                        </button>
+                                    </h2>
+                                    <div id="mandiriCollapse" class="accordion-collapse collapse show" 
+                                        aria-labelledby="mandiriHeading" data-bs-parent="#paymentAccordion">
+                                        <div class="accordion-body">
+                                            <div class="bank-details">
+                                                <p><strong>Account Number:</strong> 1234-5678-9012-3456</p>
+                                                <p><strong>Account Name:</strong> PT. TRAVELY INDONESIA</p>
+                                                <p><strong>Bank:</strong> Bank Mandiri</p>
+                                                <p class="text-muted small">Transfer the exact amount shown in the total price above.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="bcaHeading">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                            data-bs-target="#bcaCollapse" aria-expanded="false" aria-controls="bcaCollapse">
+                                            BCA M-Banking
+                                        </button>
+                                    </h2>
+                                    <div id="bcaCollapse" class="accordion-collapse collapse" 
+                                        aria-labelledby="bcaHeading" data-bs-parent="#paymentAccordion">
+                                        <div class="accordion-body">
+                                            <div class="bank-details">
+                                                <p><strong>Account Number:</strong> 8765-4321-0987-6543</p>
+                                                <p><strong>Account Name:</strong> PT. TRAVELY INDONESIA</p>
+                                                <p><strong>Bank:</strong> Bank Central Asia</p>
+                                                <p class="text-muted small">Transfer the exact amount shown in the total price above.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Confirmation Checkbox -->
+                            <div class="payment-confirmation">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="payment-confirmed" required>
+                                    <label class="form-check-label" for="payment-confirmed">
+                                        I confirm that I have completed the payment for this booking
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                            <button type="submit" class="btn btn-primary" id="confirm-booking-btn" disabled>Confirm Booking</button>
                             <a href="{{ url_for('destinations') }}" class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
@@ -76,7 +145,6 @@
     </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -84,6 +152,8 @@
         const passengerCount = document.getElementById('passenger-count');
         const totalPrice = document.getElementById('total-price');
         const basePrice = Number('{{destination.price | tojson}}');
+        const paymentConfirmed = document.getElementById('payment-confirmed');
+        const confirmBookingBtn = document.getElementById('confirm-booking-btn');
         
         function updatePrice() {
             const passengers = parseInt(passengersInput.value) || 1;
@@ -93,6 +163,11 @@
         }
         
         passengersInput.addEventListener('input', updatePrice);
+        
+        // Enable/disable confirm booking button based on payment confirmation
+        paymentConfirmed.addEventListener('change', function() {
+            confirmBookingBtn.disabled = !this.checked;
+        });
     }); 
 </script>
 {% endblock %}

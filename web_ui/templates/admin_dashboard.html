@@ -1,7 +1,5 @@
 {% extends "base_admin.html" %}
-
 {% block title %}Admin Dashboard{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
     <h1 class="mb-4">Admin Dashboard</h1>
@@ -32,10 +30,9 @@
             </div>
         </div>
     </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h4>Recent Bookings</h4>
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Recent Bookings</h4>
         </div>
         <div class="card-body">
             <table class="table table-striped">
@@ -45,8 +42,10 @@
                         <th>User</th>
                         <th>Destination</th>
                         <th>Date</th>
+                        <th>Passengers</th>
+                        <th>Price</th>
                         <th>Status</th>
-                        <th>Action</th> <!-- Tambahkan kolom Action -->
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -68,6 +67,8 @@
                             {% endif %}
                         </td>
                         <td>{{ booking.travel_date }}</td>
+                        <td>{{ booking.passengers }}</td>
+                        <td>Rp {{ "{:,}".format(booking.destination.price * booking.passengers) }}</td>
                         <td>
                             <span class="badge bg-{{ 'success' if booking.status == 'Confirmed' else 'warning' if booking.status == 'Pending' else 'danger' }}">
                                 {{ booking.status }}
@@ -88,7 +89,6 @@
         </div>
     </div>
 </div>
-
 {% raw %}
 <script>
 function updateStatus(bookingId, newStatus) {
@@ -113,5 +113,4 @@ function updateStatus(bookingId, newStatus) {
 }
 </script>
 {% endraw %}
-
 {% endblock %}

@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
 {% block title %}My Profile - TRAVELY{% endblock %}
-
 {% block content %}
 <div class="user-profile-page">
     <div class="row">
@@ -18,7 +16,6 @@
                         <h4>{{ user.name }}</h4>
                         <p class="text-muted">Member since: {{ session.user.get('join_date', 'January 2025') }}</p>
                     </div>
-
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -33,7 +30,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -48,7 +44,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="profile-actions mt-4">
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
                             <i class="fas fa-edit"></i> Edit Profile
@@ -59,7 +54,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Profile Summary -->
             <div class="row mt-4">
                 <div class="col-md-6 mb-4">
@@ -112,7 +106,6 @@
         </div>
     </div>
 </div>
-
 <!-- Edit Profile Modal -->
 <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -152,28 +145,108 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
+<!-- Alert for notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="profileUpdateToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <strong class="me-auto">Profile Update</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="profileUpdateMessage">
+        </div>
+    </div>
+</div>
+{% endblock %}
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // This is a placeholder for edit profile functionality
-        // In a real application, you would handle the form submission via AJAX
+        // Get user ID from the session
+        const userId = {{ session.user.id }};
+        
         document.getElementById('saveProfileChanges').addEventListener('click', function() {
             // Validate password match
+            const name = document.getElementById('editName').value;
+            const email = document.getElementById('editEmail').value;
+            const phone = document.getElementById('editPhone').value;
             const password = document.getElementById('editPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             
             if (password !== confirmPassword && password !== '') {
-                alert('Passwords do not match!');
+                showToast('Passwords do not match!', 'danger');
                 return;
             }
             
-            // Show success message and close modal
-            alert('Profile updated successfully!');
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
-            modal.hide();
+            // Prepare data for update
+            const userData = {
+                name: name,
+                email: email,
+                phone: phone
+            };
+            
+            // Add password only if it's provided
+            if (password !== '') {
+                userData.password = password;
+            }
+            
+            // Send update request to API
+            fetch(`/api/update_profile/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Profile updated successfully!', 'success');
+                    
+                    // Update the displayed profile data without page refresh
+                    document.querySelectorAll('.card-body h4')[0].textContent = name;
+                    document.querySelectorAll('.form-control')[0].textContent = name;
+                    document.querySelectorAll('.form-control')[1].textContent = email;
+                    document.querySelectorAll('.form-control')[2].textContent = phone;
+                    
+                    const navUsername = document.querySelector('.nav-link.dropdown-toggle');
+                    if (navUsername) {
+                        // Pertahankan ikon dan update nama
+                        const iconHTML = navUsername.innerHTML.split('</i>')[0] + '</i> ';
+                        navUsername.innerHTML = iconHTML + name;
+                    }
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
+                    modal.hide();
+                    
+                    // Reload page after short delay to refresh all data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast(data.error || 'Failed to update profile', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error updating profile. Please try again later.', 'danger');
+            });
         });
+        
+        // Function to show toast notifications
+        function showToast(message, type = 'success') {
+            const toastEl = document.getElementById('profileUpdateToast');
+            const toast = new bootstrap.Toast(toastEl);
+            
+            // Set message
+            document.getElementById('profileUpdateMessage').textContent = message;
+            
+            // Set toast header color based on type
+            const toastHeader = toastEl.querySelector('.toast-header');
+            toastHeader.className = `toast-header bg-${type} text-white`;
+            
+            toast.show();
+        }
     });
 </script>
 {% endblock %}

@@ -270,6 +270,115 @@ def get_admin(admin_id):
         return jsonify(dict(admin))
     return jsonify({"error": "Admin not found"}), 404
 
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    """
+    Update a user's information
+    ---
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the user
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Alice Updated
+            email:
+              type: string
+              example: alice_updated@example.com
+            phone:
+              type: string
+              example: 08222222222
+            password:
+              type: string
+              example: newpassword123
+    responses:
+      200:
+        description: User updated successfully
+      404:
+        description: User not found
+      400:
+        description: Email already exists
+    """
+    data = request.json
+    
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    
+    # Check if user exists
+    cursor.execute("SELECT * FROM users WHERE id=?", (user_id,))
+    user = cursor.fetchone()
+    
+    if not user:
+        conn.close()
+        return jsonify({"error": "User not found"}), 404
+    
+    # Prepare update fields and values
+    update_fields = []
+    update_values = []
+    
+    if 'name' in data:
+        update_fields.append("name = ?")
+        update_values.append(data['name'])
+    
+    if 'email' in data:
+        # Check if email is already used by another user
+        if data['email'] != user[2]:  # Check if email is different from current
+            cursor.execute("SELECT id FROM users WHERE email=? AND id!=?", (data['email'], user_id))
+            if cursor.fetchone():
+                conn.close()
+                return jsonify({"error": "Email already exists"}), 400
+        update_fields.append("email = ?")
+        update_values.append(data['email'])
+    
+    if 'phone' in data:
+        update_fields.append("phone = ?")
+        update_values.append(data['phone'])
+    
+    if 'password' in data:
+        update_fields.append("password = ?")
+        update_values.append(data['password'])
+    
+    if not update_fields:
+        conn.close()
+        return jsonify({"error": "No fields to update"}), 400
+    
+    # Construct and execute the update query
+    update_query = f"UPDATE users SET {', '.join(update_fields)} WHERE id=?"
+    update_values.append(user_id)
+    
+    try:
+        cursor.execute(update_query, update_values)
+        conn.commit()
+        
+        # Get updated user info
+        cursor.execute("SELECT id, name, email, phone FROM users WHERE id=?", (user_id,))
+        updated_user = cursor.fetchone()
+        conn.close()
+        
+        if updated_user:
+            return jsonify({
+                "id": updated_user[0],
+                "name": updated_user[1],
+                "email": updated_user[2],
+                "phone": updated_user[3],
+                "message": "User updated successfully"
+            })
+        return jsonify({"error": "Failed to retrieve updated user"}), 500
+    except sqlite3.IntegrityError as e:
+        conn.close()
+        return jsonify({"error": f"Database error: {str(e)}"}), 400
+    except Exception as e:
+        conn.close()
+        return jsonify({"error": f"Update failed: {str(e)}"}), 500
+
 if __name__ == '__main__':
     init_db()
     create_sample_users()
