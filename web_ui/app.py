@@ -4,26 +4,24 @@ import json
 from datetime import datetime, timedelta
 import os
 from werkzeug.utils import secure_filename
+from flasgger import Swagger
 
 app = Flask(__name__)
 app.secret_key = 'travely_secret_key'
+swagger = Swagger(app)
 
 # Service URLs
 USER_SERVICE_URL = "http://localhost:5001/api"
 DESTINATION_SERVICE_URL = "http://localhost:5002/api"
 BOOKING_SERVICE_URL = "http://localhost:5003/api"
-
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'images')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'jfif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-
 # Pastikan folder uploads ada
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 def save_image(file):
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
@@ -34,9 +32,15 @@ def save_image(file):
         # Return path relatif untuk akses melalui web
         return f"/static/uploads/images/{filename}"
     return None
-
 @app.route('/')
 def index():
+    """
+    Menampilkan halaman utama aplikasi Travely
+    ---
+    responses:
+      200:
+        description: Halaman beranda dengan daftar destinasi
+    """
     try:
         response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations")
         destinations = response.json()['destinations'] if response.status_code == 200 else []
@@ -45,9 +49,15 @@ def index():
         flash('Unable to connect to destination service', 'danger')
     
     return render_template('index.html', destinations=destinations)
-
 @app.route('/destinations')
 def destinations():
+    """
+    Menampilkan daftar semua destinasi
+    ---
+    responses:
+      200:
+        description: Daftar lengkap destinasi wisata
+    """
     try:
         response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations")
         destinations = response.json()['destinations'] if response.status_code == 200 else []
@@ -56,9 +66,23 @@ def destinations():
         flash('Unable to connect to destination service', 'danger')
     
     return render_template('destinations.html', destinations=destinations)
-
 @app.route('/destinations/<int:destination_id>')
 def destination_detail(destination_id):
+    """
+    Menampilkan detail destinasi
+    ---
+    parameters:
+      - name: destination_id
+        in: path
+        type: integer
+        required: true
+        description: ID destinasi yang akan ditampilkan
+    responses:
+      200:
+        description: Detail informasi destinasi
+      302:
+        description: Redirect karena destinasi tidak ditemukan
+    """
     try:
         response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations/{destination_id}")
         if response.status_code == 200:
@@ -71,21 +95,41 @@ def destination_detail(destination_id):
         return redirect(url_for('destinations'))
     
     return render_template('destination_detail.html', destination=destination)
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    Halaman dan proses login user/admin
+    ---
+    tags:
+      - authentication
+    parameters:
+      - name: email_or_username
+        in: formData
+        type: string
+        required: true
+        description: Email atau username pengguna
+      - name: password
+        in: formData
+        type: string
+        format: password
+        required: true
+        description: Password pengguna
+    responses:
+      200:
+        description: Form login atau pesan error
+      302:
+        description: Redirect setelah login berhasil
+    """
     error = None
     if request.method == 'POST':
         email_or_username = request.form['email_or_username']
         password = request.form['password']
-
         # Step 1: Coba login sebagai User
         try:
             user_response = requests.post(
                 f"{USER_SERVICE_URL}/users/auth",
                 json={"email": email_or_username, "password": password}
             )
-
             if user_response.status_code == 200 and user_response.json().get('success'):
                 session['user'] = user_response.json()['user']
                 flash('Login successful as User', 'success')
@@ -93,14 +137,12 @@ def login():
         except requests.RequestException:
             flash('Unable to connect to user service', 'danger')
             return render_template('login.html', error="Service unavailable.")
-
         # Step 2: Kalau gagal login User, coba login Admin
         try:
             admin_response = requests.post(
                 f"{USER_SERVICE_URL}/admins/auth",
                 json={"username": email_or_username, "password": password}
             )
-
             if admin_response.status_code == 200 and admin_response.json().get('success'):
                 session['admin'] = admin_response.json()['admin']
                 flash('Login successful as Admin', 'success')
@@ -108,14 +150,45 @@ def login():
         except requests.RequestException:
             flash('Unable to connect to admin service', 'danger')
             return render_template('login.html', error="Service unavailable.")
-
         # Kalau dua-duanya gagal
         error = "Invalid email/username or password."
-
     return render_template('login.html', error=error)
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """
+    Pendaftaran pengguna baru
+    ---
+    tags:
+      - authentication
+    parameters:
+      - name: name
+        in: formData
+        type: string
+        required: true
+        description: Nama lengkap pengguna
+      - name: email
+        in: formData
+        type: string
+        format: email
+        required: true
+        description: Alamat email pengguna
+      - name: phone
+        in: formData
+        type: string
+        required: true
+        description: Nomor telepon pengguna
+      - name: password
+        in: formData
+        type: string
+        format: password
+        required: true
+        description: Password untuk akun baru
+    responses:
+      200:
+        description: Form pendaftaran atau pesan error
+      302:
+        description: Redirect ke halaman login setelah pendaftaran berhasil
+    """
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
@@ -142,9 +215,17 @@ def register():
             flash('Unable to connect to user service', 'danger')
     
     return render_template('register.html')
-
 @app.route('/logout')
 def logout():
+    """
+    Proses logout pengguna
+    ---
+    tags:
+      - authentication
+    responses:
+      302:
+        description: Redirect ke halaman beranda setelah logout
+    """
     if 'user' in session:
         session.pop('user', None)
         flash('You have been logged out', 'success')
@@ -152,9 +233,36 @@ def logout():
         session.pop('admin', None)
         flash('Admin logged out successfully', 'success')
     return redirect(url_for('index'))
-
 @app.route('/book/<int:destination_id>', methods=['GET', 'POST'])
 def booking(destination_id):
+    """
+    Pemesanan destinasi wisata
+    ---
+    tags:
+      - booking
+    parameters:
+      - name: destination_id
+        in: path
+        type: integer
+        required: true
+        description: ID destinasi yang akan dipesan
+      - name: travel_date
+        in: formData
+        type: string
+        format: date
+        required: true
+        description: Tanggal perjalanan (YYYY-MM-DD)
+      - name: passengers
+        in: formData
+        type: integer
+        required: true
+        description: Jumlah penumpang
+    responses:
+      200:
+        description: Form pemesanan atau pesan error
+      302:
+        description: Redirect setelah pemesanan berhasil atau jika pengguna belum login
+    """
     if 'user' not in session:
         flash('Please login to book a trip', 'warning')
         return redirect(url_for('login'))
@@ -198,9 +306,19 @@ def booking(destination_id):
     min_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
     
     return render_template('booking.html', destination=destination, min_date=min_date)
-
 @app.route('/profile')
 def user_profile():
+    """
+    Menampilkan profil pengguna
+    ---
+    tags:
+      - user
+    responses:
+      200:
+        description: Halaman profil pengguna dengan data lengkap
+      302:
+        description: Redirect ke halaman login jika belum login
+    """
     if 'user' not in session:
         flash('Please login to view your profile', 'warning')
         return redirect(url_for('login'))
@@ -219,9 +337,20 @@ def user_profile():
         return redirect(url_for('index'))
     
     return render_template('user_profile.html', user=user_data)
-
 @app.route('/bookings')
 def user_bookings():
+    """
+    Menampilkan daftar pemesanan pengguna
+    ---
+    tags:
+      - booking
+      - user
+    responses:
+      200:
+        description: Daftar semua pemesanan milik pengguna yang login
+      302:
+        description: Redirect ke halaman login jika belum login
+    """
     if 'user' not in session:
         flash('Please login to view your bookings', 'warning')
         return redirect(url_for('login'))
@@ -234,7 +363,6 @@ def user_bookings():
             bookings = bookings_response.json()['bookings']
             # Hitung total bookings dengan status Confirmed
             confirmed_count = sum(1 for booking in bookings if booking.get('status', '').lower() == 'confirmed')
-
             # Simpan ke session
             session['user_stats'] = {
                 'total_bookings': confirmed_count
@@ -248,9 +376,26 @@ def user_bookings():
         flash('Unable to connect to booking service', 'danger')
     
     return render_template('user_bookings.html', bookings=bookings)
-
 @app.route('/booking/<int:booking_id>')
 def booking_detail(booking_id):
+    """
+    Menampilkan detail pemesanan
+    ---
+    tags:
+      - booking
+      - user
+    parameters:
+      - name: booking_id
+        in: path
+        type: integer
+        required: true
+        description: ID pemesanan yang akan ditampilkan
+    responses:
+      200:
+        description: Detail informasi pemesanan
+      302:
+        description: Redirect jika pemesanan tidak ditemukan atau bukan milik pengguna
+    """
     if 'user' not in session:
         flash('Please login to view booking details', 'warning')
         return redirect(url_for('login'))
@@ -271,10 +416,8 @@ def booking_detail(booking_id):
         return redirect(url_for('user_bookings'))
     
     return render_template('booking_detail.html', booking=booking)
-
 from functools import wraps
 from flask import session, redirect, url_for, flash
-
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -286,10 +429,22 @@ def admin_required(f):
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
-
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
+    """
+    Dashboard admin dengan statistik
+    ---
+    tags:
+      - admin
+    security:
+      - admin_auth: []
+    responses:
+      200:
+        description: Dashboard admin dengan data statistik
+      302:
+        description: Redirect ke halaman login admin jika tidak terotentikasi
+    """
     try:
         # Ambil data dengan timeout
         users = requests.get(f"{USER_SERVICE_URL}/users").json().get('users', [])
@@ -322,47 +477,77 @@ def admin_dashboard():
 @app.route('/admin/bookings')
 @admin_required
 def admin_bookings():
+    """
+    Manajemen pemesanan untuk admin
+    ---
+    tags:
+      - admin
+      - booking
+    security:
+      - admin_auth: []
+    responses:
+      200:
+        description: Halaman manajemen pemesanan dengan data lengkap
+      302:
+        description: Redirect ke login admin jika tidak terotentikasi
+    """
     try:
         users = requests.get(f"{USER_SERVICE_URL}/users").json().get('users', [])
         bookings = requests.get(f"{BOOKING_SERVICE_URL}/bookings").json().get('bookings', [])
         destinations = requests.get(f"{DESTINATION_SERVICE_URL}/destinations").json().get('destinations', [])
-
         # Bikin dictionary buat lookup cepat
         user_dict = {user['id']: user for user in users}
         destination_dict = {dest['id']: dest for dest in destinations}
-
         # Update setiap booking supaya punya user_name dan destination_name
         for booking in bookings:
             booking['user_name'] = user_dict.get(booking['user_id'], {}).get('name', 'Unknown User')
             booking['destination_name'] = destination_dict.get(booking['destination_id'], {}).get('name', 'Unknown Destination')
-
         return render_template('admin_manage_booking.html', bookings=bookings, users=users, destinations=destinations)
     except requests.RequestException as e:
         app.logger.error(f"Service error: {str(e)}")
         flash("Failed to load bookings data", "danger")
         return render_template('admin_manage_booking.html', bookings=[])
-
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
-    # If already logged in as admin
+    """
+    Login khusus admin
+    ---
+    tags:
+      - authentication
+      - admin
+    parameters:
+      - name: username
+        in: formData
+        type: string
+        required: true
+        description: Username admin
+      - name: password
+        in: formData
+        type: string
+        format: password
+        required: true
+        description: Password admin
+    responses:
+      200:
+        description: Form login admin atau pesan error
+      302:
+        description: Redirect ke dashboard admin setelah login berhasil
+    """
     if session.get('admin'):
         return redirect(url_for('admin_dashboard'))
     
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-
         if not username or not password:
             flash('Please fill all fields', 'danger')
             return render_template('login.html')
-
         try:
             response = requests.post(
                 f"{USER_SERVICE_URL}/admins/auth",
                 json={"username": username, "password": password},
                 timeout=5
             )
-
             if response.status_code == 200 and response.json().get('success'):
                 # Clear any existing user session
                 session.clear()
@@ -376,9 +561,62 @@ def admin_login():
             flash('Unable to connect to authentication service', 'danger')
     
     return render_template('login.html')
-
 @app.route('/api/update_profile/<int:user_id>', methods=['PUT'])
 def update_profile(user_id):
+    """
+    API untuk update profil pengguna
+    ---
+    tags:
+      - api
+      - user
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID pengguna yang profilnya akan diperbarui
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - name
+            - email
+            - phone
+          properties:
+            name:
+              type: string
+              description: Nama baru pengguna
+            email:
+              type: string
+              format: email
+              description: Email baru pengguna
+            phone:
+              type: string
+              description: Nomor telepon baru pengguna
+            password:
+              type: string
+              description: Password baru pengguna (opsional)
+    responses:
+      200:
+        description: Profil berhasil diperbarui
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            message:
+              type: string
+              example: "Profile updated successfully"
+      400:
+        description: Data tidak lengkap
+      403:
+        description: Tidak memiliki izin
+      500:
+        description: Error server
+    """
     if 'user' not in session or session['user']['id'] != user_id:
         return jsonify({'success': False, 'error': 'Unauthorized access'}), 403
     
@@ -419,9 +657,22 @@ def update_profile(user_id):
             return jsonify({'success': False, 'error': response.json().get('error', 'Update failed')}), response.status_code
     except requests.RequestException:
         return jsonify({'success': False, 'error': 'Unable to connect to user service'}), 500
-
 @app.route('/admin/destinations')
 def admin_destinations():
+    """
+    Manajemen destinasi untuk admin
+    ---
+    tags:
+      - admin
+      - destination
+    security:
+      - admin_auth: []
+    responses:
+      200:
+        description: Halaman manajemen destinasi
+      302:
+        description: Redirect ke login admin jika tidak terotentikasi
+    """
     if 'admin' not in session:
         flash('Admin access required', 'danger')
         return redirect(url_for('admin_login'))
@@ -440,9 +691,49 @@ def admin_destinations():
         flash('Unable to connect to destination service', 'danger')
     
     return render_template('admin_destinations.html', destinations=destinations, recent_destinations=recent_destinations)
-
 @app.route('/admin/destinations/add', methods=['GET', 'POST'])
 def admin_add_destination():
+    """
+    Penambahan destinasi baru
+    ---
+    tags:
+      - admin
+      - destination
+    security:
+      - admin_auth: []
+    parameters:
+      - name: name
+        in: formData
+        type: string
+        required: true
+        description: Nama destinasi
+      - name: description
+        in: formData
+        type: string
+        required: true
+        description: Deskripsi destinasi
+      - name: price
+        in: formData
+        type: number
+        format: float
+        required: true
+        description: Harga perjalanan
+      - name: duration
+        in: formData
+        type: string
+        required: true
+        description: Durasi perjalanan
+      - name: image
+        in: formData
+        type: file
+        required: true
+        description: Gambar destinasi
+    responses:
+      200:
+        description: Form tambah destinasi atau pesan error
+      302:
+        description: Redirect ke manajemen destinasi setelah berhasil
+    """
     if 'admin' not in session:
         flash('Admin access required', 'danger')
         return redirect(url_for('admin_login'))
@@ -484,9 +775,54 @@ def admin_add_destination():
             flash('Unable to connect to destination service', 'danger')
     
     return render_template('admin_add_destination.html')
-
 @app.route('/admin/destinations/edit/<int:destination_id>', methods=['GET', 'POST'])
 def admin_edit_destination(destination_id):
+    """
+    Pengeditan destinasi
+    ---
+    tags:
+      - admin
+      - destination
+    security:
+      - admin_auth: []
+    parameters:
+      - name: destination_id
+        in: path
+        type: integer
+        required: true
+        description: ID destinasi yang akan diedit
+      - name: name
+        in: formData
+        type: string
+        required: true
+        description: Nama destinasi
+      - name: description
+        in: formData
+        type: string
+        required: true
+        description: Deskripsi destinasi
+      - name: price
+        in: formData
+        type: number
+        format: float
+        required: true
+        description: Harga perjalanan
+      - name: duration
+        in: formData
+        type: string
+        required: true
+        description: Durasi perjalanan
+      - name: image
+        in: formData
+        type: file
+        required: false
+        description: Gambar destinasi baru (opsional)
+    responses:
+      200:
+        description: Form edit destinasi atau pesan error
+      302:
+        description: Redirect ke manajemen destinasi setelah berhasil
+    """
     if 'admin' not in session:
         flash('Admin access required', 'danger')
         return redirect(url_for('admin_login'))
@@ -546,6 +882,27 @@ def admin_edit_destination(destination_id):
 
 @app.route('/admin/destinations/delete/<int:destination_id>', methods=['POST'])
 def admin_delete_destination(destination_id):
+    """
+    Menghapus destinasi tertentu
+    ---
+    tags:
+      - admin
+    parameters:
+      - name: destination_id
+        in: path
+        type: integer
+        required: true
+        description: ID destinasi yang akan dihapus
+    responses:
+      302:
+        description: Redirect ke halaman manajemen destinasi
+        headers:
+          Location:
+            description: URL untuk redirect (admin_destinations)
+            type: string
+    security:
+      - admin_session: []
+    """
     if 'admin' not in session:
         flash('Admin access required', 'danger')
         return redirect(url_for('admin_login'))

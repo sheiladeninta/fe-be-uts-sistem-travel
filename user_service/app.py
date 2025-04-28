@@ -227,6 +227,31 @@ def create_sample_admins():
 
 @app.route('/api/admins/auth', methods=['POST'])
 def authenticate_admin():
+    """
+    Authenticate an admin
+    ---
+    parameters:
+      - in: body
+        name: credentials
+        required: true
+        schema:
+          type: object
+          required:
+            - username
+            - password
+          properties:
+            username:
+              type: string
+              example: superadmin
+            password:
+              type: string
+              example: superpassword
+    responses:
+      200:
+        description: Authentication successful
+      401:
+        description: Invalid credentials
+    """
     data = request.json
     if not all(key in data for key in ['username', 'password']):
         return jsonify({"error": "Missing username or password"}), 400
@@ -249,6 +274,13 @@ def authenticate_admin():
 
 @app.route('/api/admins', methods=['GET'])
 def get_admins():
+    """
+    Get all admins
+    ---
+    responses:
+      200:
+        description: List of admins
+    """
     conn = sqlite3.connect('users.db')  # Ganti dengan DB_PATH
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -259,6 +291,21 @@ def get_admins():
 
 @app.route('/api/admins/<int:admin_id>', methods=['GET'])
 def get_admin(admin_id):
+    """
+    Get a specific admin by ID
+    ---
+    parameters:
+      - name: admin_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the admin
+    responses:
+      200:
+        description: Admin details
+      404:
+        description: Admin not found
+    """
     conn = sqlite3.connect('users.db')  # Ganti dengan DB_PATH
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()

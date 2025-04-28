@@ -152,6 +152,45 @@ def add_destination():
 
 @app.route('/api/destinations/<int:destination_id>', methods=['PUT'])
 def update_destination(destination_id):
+    """
+    Update a destination by ID
+    ---
+    parameters:
+      - name: destination_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the destination to update
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - name
+            - description
+            - price
+            - duration
+            - image_url
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            price:
+              type: number
+            duration:
+              type: string
+            image_url:
+              type: string
+    responses:
+      200:
+        description: Destination updated successfully
+      400:
+        description: Missing required fields
+      404:
+        description: Destination not found
+    """
     data = request.json
     
     if not all(key in data for key in ['name', 'description', 'price', 'duration', 'image_url']):
@@ -174,6 +213,21 @@ def update_destination(destination_id):
 
 @app.route('/api/destinations/<int:destination_id>', methods=['DELETE'])
 def delete_destination(destination_id):
+    """
+    Delete a destination by ID
+    ---
+    parameters:
+      - name: destination_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the destination to delete
+    responses:
+      200:
+        description: Destination deleted successfully
+      404:
+        description: Destination not found
+    """
     conn = sqlite3.connect('destinations.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM destinations WHERE id=?", (destination_id,))
