@@ -1,0 +1,78 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Add Destination - TRAVELY Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Add New Destination</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin_add_destination') }}" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Destination Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="price" class="form-label">Price (Rp)</label>
+                                <input type="number" class="form-control" id="price" name="price" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="duration" class="form-label">Duration</label>
+                                <select class="form-select" id="duration" name="duration" required>
+                                    <option value="">Select duration</option>
+                                    <option value="2 days 1 night">2 Days 1 Night</option>
+                                    <option value="3 days 2 nights">3 Days 2 Nights</option>
+                                    <option value="4 days 3 nights">4 Days 3 Nights</option>
+                                    <option value="5 days 4 nights">5 Days 4 Nights</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="image" class="form-label">Destination Image</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                            <div class="form-text">Upload an image for the destination. Recommended size: 800x600px. Supported formats: JPG, PNG, GIF.</div>
+                            <div id="imagePreview" class="mt-2" style="display: none;">
+                                <img src="" alt="Preview" class="img-thumbnail" style="max-height: 200px;">
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin_destinations') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Destination</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.style.display = 'block';
+            preview.querySelector('img').src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

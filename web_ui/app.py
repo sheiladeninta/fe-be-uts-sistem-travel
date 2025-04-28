@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import requests
 import json
 from datetime import datetime, timedelta
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'travely_secret_key'
@@ -10,6 +12,28 @@ app.secret_key = 'travely_secret_key'
 USER_SERVICE_URL = "http://localhost:5001/api"
 DESTINATION_SERVICE_URL = "http://localhost:5002/api"
 BOOKING_SERVICE_URL = "http://localhost:5003/api"
+
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'images')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'jfif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Pastikan folder uploads ada
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_image(file):
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        # Tambahkan timestamp untuk menghindari nama file yang sama
+        filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        # Return path relatif untuk akses melalui web
+        return f"/static/uploads/images/{filename}"
+    return None
 
 @app.route('/')
 def index():
@@ -269,21 +293,31 @@ def admin_dashboard():
     try:
         # Ambil data dengan timeout
         users = requests.get(f"{USER_SERVICE_URL}/users").json().get('users', [])
-        bookings = requests.get(f"{BOOKING_SERVICE_URL}/bookings?limit=5").json().get('bookings', [])
+        bookings = requests.get(f"{BOOKING_SERVICE_URL}/bookings").json().get('bookings', [])
         destinations = requests.get(f"{DESTINATION_SERVICE_URL}/destinations").json().get('destinations', [])
-       
+        
+        # Sort data untuk mendapatkan yang terbaru (berdasarkan id, asumsikan id yang lebih besar = lebih baru)
+        sorted_bookings = sorted(bookings, key=lambda x: x.get('id', 0), reverse=True)
+        sorted_destinations = sorted(destinations, key=lambda x: x.get('id', 0), reverse=True)
+        
+        # Ambil hanya 3 data terbaru
+        recent_bookings = sorted_bookings[:3]
+        recent_destinations = sorted_destinations[:3]
+        
         stats = {
             'users_count': len(users),
             'bookings_count': len(bookings),
             'destinations_count': len(destinations),
-            'recent_bookings': bookings
+            'recent_bookings': recent_bookings,
+            'recent_destinations': recent_destinations
         }
+        
         return render_template('admin_dashboard.html', stats=stats)
         
     except requests.RequestException as e:
         app.logger.error(f"Service error: {str(e)}")
         flash("Failed to load data from services", "danger")
-        return render_template('admin_dashboard.html', stats=None)  # Kirim stats kosong
+        return render_template('admin_dashboard.html', stats=None)
     
 @app.route('/admin/bookings')
 @admin_required
@@ -385,6 +419,148 @@ def update_profile(user_id):
             return jsonify({'success': False, 'error': response.json().get('error', 'Update failed')}), response.status_code
     except requests.RequestException:
         return jsonify({'success': False, 'error': 'Unable to connect to user service'}), 500
+
+@app.route('/admin/destinations')
+def admin_destinations():
+    if 'admin' not in session:
+        flash('Admin access required', 'danger')
+        return redirect(url_for('admin_login'))
+    
+    try:
+        # Ambil semua destinasi
+        response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations")
+        destinations = response.json()['destinations'] if response.status_code == 200 else []
+        
+        # Ambil 5 destinasi terbaru (sort berdasarkan ID secara descending)
+        recent_destinations = sorted(destinations, key=lambda x: x['id'], reverse=True)[:5]
+        
+    except requests.RequestException:
+        destinations = []
+        recent_destinations = []
+        flash('Unable to connect to destination service', 'danger')
+    
+    return render_template('admin_destinations.html', destinations=destinations, recent_destinations=recent_destinations)
+
+@app.route('/admin/destinations/add', methods=['GET', 'POST'])
+def admin_add_destination():
+    if 'admin' not in session:
+        flash('Admin access required', 'danger')
+        return redirect(url_for('admin_login'))
+    
+    if request.method == 'POST':
+        # Handle file upload
+        image_url = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file.filename == '':
+                flash('No image selected', 'danger')
+                return render_template('admin_add_destination.html')
+            
+            image_url = save_image(file)
+            if not image_url:
+                flash('Invalid image file. Please upload a valid image (JPG, PNG, or GIF).', 'danger')
+                return render_template('admin_add_destination.html')
+        
+        destination_data = {
+            'name': request.form['name'],
+            'description': request.form['description'],
+            'price': float(request.form['price']),
+            'duration': request.form['duration'],
+            'image_url': image_url
+        }
+        
+        try:
+            response = requests.post(
+                f"{DESTINATION_SERVICE_URL}/destinations", 
+                json=destination_data
+            )
+            
+            if response.status_code == 201:
+                flash('Destination added successfully', 'success')
+                return redirect(url_for('admin_destinations'))
+            else:
+                flash(f'Failed to add destination: {response.json().get("error", "Unknown error")}', 'danger')
+        except requests.RequestException:
+            flash('Unable to connect to destination service', 'danger')
+    
+    return render_template('admin_add_destination.html')
+
+@app.route('/admin/destinations/edit/<int:destination_id>', methods=['GET', 'POST'])
+def admin_edit_destination(destination_id):
+    if 'admin' not in session:
+        flash('Admin access required', 'danger')
+        return redirect(url_for('admin_login'))
+    
+    try:
+        if request.method == 'POST':
+            # Get current destination data
+            dest_response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations/{destination_id}")
+            if dest_response.status_code != 200:
+                flash('Destination not found', 'danger')
+                return redirect(url_for('admin_destinations'))
+            current_destination = dest_response.json()
+            
+            # Handle file upload
+            image_url = current_destination['image_url']
+            if 'image' in request.files:
+                file = request.files['image']
+                if file.filename != '':  # Only process if a new file was uploaded
+                    new_image_url = save_image(file)
+                    if new_image_url:
+                        image_url = new_image_url
+                    else:
+                        flash('Invalid image file. Please upload a valid image (JPG, PNG, or GIF).', 'danger')
+                        return render_template('admin_edit_destination.html', destination=current_destination)
+            
+            destination_data = {
+                'name': request.form['name'],
+                'description': request.form['description'],
+                'price': float(request.form['price']),
+                'duration': request.form['duration'],
+                'image_url': image_url
+            }
+            
+            response = requests.put(
+                f"{DESTINATION_SERVICE_URL}/destinations/{destination_id}", 
+                json=destination_data
+            )
+            
+            if response.status_code == 200:
+                flash('Destination updated successfully', 'success')
+                return redirect(url_for('admin_destinations'))
+            else:
+                flash(f'Failed to update destination: {response.json().get("error", "Unknown error")}', 'danger')
+        
+        # Get destination data for form
+        dest_response = requests.get(f"{DESTINATION_SERVICE_URL}/destinations/{destination_id}")
+        if dest_response.status_code == 200:
+            destination = dest_response.json()
+        else:
+            flash('Destination not found', 'danger')
+            return redirect(url_for('admin_destinations'))
+    except requests.RequestException:
+        flash('Unable to connect to destination service', 'danger')
+        return redirect(url_for('admin_destinations'))
+    
+    return render_template('admin_edit_destination.html', destination=destination)
+
+@app.route('/admin/destinations/delete/<int:destination_id>', methods=['POST'])
+def admin_delete_destination(destination_id):
+    if 'admin' not in session:
+        flash('Admin access required', 'danger')
+        return redirect(url_for('admin_login'))
+    
+    try:
+        response = requests.delete(f"{DESTINATION_SERVICE_URL}/destinations/{destination_id}")
+        
+        if response.status_code == 200:
+            flash('Destination deleted successfully', 'success')
+        else:
+            flash(f'Failed to delete destination: {response.json().get("error", "Unknown error")}', 'danger')
+    except requests.RequestException:
+        flash('Unable to connect to destination service', 'danger')
+    
+    return redirect(url_for('admin_destinations'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -150,6 +150,42 @@ def add_destination():
     
     return jsonify({"id": destination_id, "message": "Destination added successfully"}), 201
 
+@app.route('/api/destinations/<int:destination_id>', methods=['PUT'])
+def update_destination(destination_id):
+    data = request.json
+    
+    if not all(key in data for key in ['name', 'description', 'price', 'duration', 'image_url']):
+        return jsonify({"error": "Missing required fields"}), 400
+    
+    conn = sqlite3.connect('destinations.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE destinations SET name=?, description=?, price=?, duration=?, image_url=? WHERE id=?",
+        (data['name'], data['description'], data['price'], data['duration'], data['image_url'], destination_id)
+    )
+    conn.commit()
+    
+    if cursor.rowcount == 0:
+        conn.close()
+        return jsonify({"error": "Destination not found"}), 404
+    
+    conn.close()
+    return jsonify({"message": "Destination updated successfully"})
+
+@app.route('/api/destinations/<int:destination_id>', methods=['DELETE'])
+def delete_destination(destination_id):
+    conn = sqlite3.connect('destinations.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM destinations WHERE id=?", (destination_id,))
+    conn.commit()
+    
+    if cursor.rowcount == 0:
+        conn.close()
+        return jsonify({"error": "Destination not found"}), 404
+    
+    conn.close()
+    return jsonify({"message": "Destination deleted successfully"})
+
 if __name__ == '__main__':
     init_db()
     create_sample_destinations()
